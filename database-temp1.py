@@ -1,0 +1,408 @@
+# Run this app with `python app.py` and
+# visit http://127.0.0.1:8050/ in your web browser.
+import sqlite3
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+import pandas as pd
+from dash.dependencies import Input, Output, State
+import dash_table
+
+conn = sqlite3.connect('temp.db', check_same_thread=False)
+cursor = conn.cursor()
+
+# get year list
+sql_year = '''
+SELECT year
+from year_list
+'''
+df_years = pd.read_sql_query(sql_year, conn)
+
+# def generate_table(dataframe, max_rows=10):
+#     return html.Table([
+#         html.Thead(
+#             html.Tr([html.Th(col) for col in dataframe.columns])
+#         ),
+#         html.Tbody([
+#             html.Tr([
+#                 html.Td(dataframe.iloc[i][col]) for col in dataframe.columns
+#             ]) for i in range(min(len(dataframe), max_rows))
+#         ])
+#     ])
+df_key = pd.DataFrame()
+
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
+
+app.layout = html.Div(
+    children=[
+        dcc.Input(id='input-1-state', type='text', value='CFD'),
+        html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
+        html.H4(children='Search in Database @amirhosseinfardi'),
+        html.Div([
+            dcc.RangeSlider(
+                id='year-slider',
+                min=int(df_years['year'].min()),
+                max=int(df_years['year'].max()),
+                step=1,
+                value=[2017, 2020],
+                allowCross=False,
+                marks={str(year): str(year) for year in df_years['year'].unique()}
+            ),
+            html.Div(id='output-container-range-slider')
+        ]),
+        html.Div(id='output-table'),
+        # html.Div(id='output-density',
+        #          style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'textAlign': 'center',
+        #                 'border': '2px solid #73AD21'}),
+        html.Div([
+            dash_table.DataTable(
+                id='datatable-temp',
+                # data=df_key.to_dict('records'),
+                # columns=[{'id': c, 'name': c} for c in df_key.columns],
+                page_size=10,
+                row_selectable="single",
+                selected_rows=[],
+                style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+                style_header={
+                    'backgroundColor': 'rgb(230, 230, 230)',
+                    'fontWeight': 'bold'
+                }
+            )
+
+        ]),
+        html.Button(id='keyword-button-state', n_clicks=0, children='Show Article',
+                    style={'background-color': '#44c767'}),
+        html.Div(id='output-density-article',
+                 style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
+        html.Div(id='output-author',
+                 style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
+        html.Div(id='output-country',
+                 style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'})
+    ])
+
+
+@app.callback([Output('output-table', 'children'),
+               Output('datatable-temp', 'data'),
+               Output('datatable-temp', 'columns'),
+               Output('output-author', 'children'),
+               Output('output-country', 'children')],
+              [Input('submit-button-state', 'n_clicks')],
+              [State('input-1-state', 'value'),
+               State('year-slider', 'value')]
+              )
+def generate_table(n_clicks, input1, user_year, max_rows=10):
+    # sqlite read
+    year_list = list(range(user_year[0], user_year[1] + 1, 1))
+    if len(year_list) == 1:
+        year_list.append(year_list[0])
+    keylist = []
+    author_list = []
+    country_list = []
+    df_key = pd.DataFrame(columns=['keyword'])
+    df_auth = pd.DataFrame(columns=['author_name'])
+    df_countr = pd.DataFrame(columns=['country_name'])
+    df_sql_doi = pd.DataFrame()
+    # get journal name available in database
+    sql_jn = """
+    SELECT journal_name
+    FROM journal_list
+    """
+    for row in cursor.execute(sql_jn):
+        jn = str(row[0])
+        # print(jn)
+        # select id of each keyword based on different journal name
+        sql_final = """
+         SELECT keyword_id
+         FROM {temp_jn}
+         WHERE paper_id IN (SELECT paper_id
+         FROM {temp_paper_list}
+         WHERE paper_abstract LIKE '%{user_search_temp}%'
+         )
+         AND
+         paper_id IN (SELECT paper_id
+         FROM {temp_paper_list}
+         WHERE paper_year IN ( SELECT year_id
+         FROM year_list
+         WHERE year IN {temp_year}
+         ))
+         ;""".format(temp_jn='paper_keyword_' + jn.replace(" ", "_"),
+                     temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                     user_search_temp=input1,
+                     temp_year=str(tuple(year_list)))
+
+        df2 = pd.read_sql_query(sql_final, conn)
+        # get keyword name of each id. loop for select duplicate keyword
+        for kkk in df2['keyword_id']:
+            # get keyword
+            sql_keyword = '''
+            SELECT keyword
+            FROM keyword_list
+            WHERE keyword_id = {}'''.format(str(kkk))
+            df_keyword = pd.read_sql_query(sql_keyword, conn)
+            keylist.append(df_keyword.iloc[0]['keyword'])
+
+        # select id of each author based on different journal name
+        sql_author = """
+         SELECT author_id
+         FROM {temp_jn}
+         WHERE paper_id IN (SELECT paper_id
+         FROM {temp_paper_list}
+         WHERE paper_abstract LIKE '%{user_search_temp}%'
+         )
+         AND
+         paper_id IN (SELECT paper_id
+         FROM {temp_paper_list}
+         WHERE paper_year IN ( SELECT year_id
+         FROM year_list
+         WHERE year IN {temp_year}
+         ))
+         ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
+                     temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                     user_search_temp=input1,
+                     temp_year=str(tuple(year_list)))
+        df3 = pd.read_sql_query(sql_author, conn)
+        for mmm in df3['author_id']:
+            # get author
+            sql_author = '''
+                        SELECT author_name
+                        FROM author_list
+                        WHERE author_id = {}'''.format(str(mmm))
+            df_author = pd.read_sql_query(sql_author, conn)
+            author_list.append(df_author.iloc[0]['author_name'])
+
+        # get name and doi of article
+        sql_doi = """
+        SELECT paper_doi, paper_name, paper_id
+        FROM {temp_paper_list}
+        WHERE paper_id IN (SELECT paper_id
+        FROM {temp_paper_list}
+        WHERE paper_abstract LIKE '%{user_search_temp}%'
+        )
+        AND
+         paper_id IN (SELECT paper_id
+         FROM {temp_paper_list}
+         WHERE paper_year IN ( SELECT year_id
+         FROM year_list
+         WHERE year IN {temp_year}
+         ))
+        ;""".format(
+            temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+            user_search_temp=input1,
+            temp_year=str(tuple(year_list))
+        )
+        df_sql_doi = df_sql_doi.append(pd.read_sql_query(sql_doi, conn))
+
+        # get country first ID and then get name through the loop
+        sql_country = """
+                 SELECT country_id
+                 FROM {temp_jn}
+                 WHERE paper_id IN (SELECT paper_id
+                 FROM {temp_paper_list}
+                 WHERE paper_abstract LIKE '%{user_search_temp}%'
+                 )
+                 AND
+                 paper_id IN (SELECT paper_id
+                 FROM {temp_paper_list}
+                 WHERE paper_year IN ( SELECT year_id
+                 FROM year_list
+                 WHERE year IN {temp_year}
+                 ))
+                 ;""".format(temp_jn='paper_country_' + jn.replace(" ", "_"),
+                             temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                             user_search_temp=input1,
+                             temp_year=str(tuple(year_list)))
+        df4 = pd.read_sql_query(sql_country, conn)
+        for nnn in df4['country_id']:
+            # get country name
+            sql_country = '''
+                                SELECT country_name
+                                FROM country_list
+                                WHERE country_id = {}'''.format(str(nnn))
+            df_country = pd.read_sql_query(sql_country, conn)
+            country_list.append(df_country.iloc[0]['country_name'])
+
+    # end of sql. start of cleaning data
+    df_key['keyword'] = keylist
+    try:
+        df_key['keyword'] = df_key['keyword'].str.lower()
+    except:
+        pass
+    # df_key['keyword'] = df_key['keyword'].drop_duplicates()
+    df_key = df_key.keyword.value_counts().rename_axis('keyword').reset_index(name='counts')
+    global df_key_share
+    df_key_share = df_key
+    df_auth['author_name'] = author_list
+    df_auth = df_auth.author_name.value_counts().rename_axis('author_name').reset_index(name='counts')
+    # merge same country
+    dict_country = {'the Netherlands': 'Netherlands',
+                    'The Netherlands': 'Netherlands',
+                    'Aero Engine (Group) Corporation of China': 'China',
+                    'PR China': 'China',
+                    'United States': 'USA',
+                    'United Kingdom': 'UK',
+                    "People's Republic of China": 'China',
+                    'Republic of Singapore': 'Singapore',
+                    'United States of America': 'USA',
+                    'P.R. China': 'China',
+                    }
+
+    df_countr['country_name'] = country_list
+    df_countr['country_name'] = df_countr['country_name'].replace(dict_country)
+    df_countr = df_countr.country_name.value_counts().rename_axis('country_name').reset_index(name='counts')
+    # df_key = df_key.columns['keyword', 'count']
+    # print(df_sql_doi)
+    # output1 = html.Table([
+    #     html.Thead(
+    #         html.Tr([html.Th(col) for col in df_sql_doi.columns])
+    #     ),
+    #     html.Tbody([
+    #         html.Tr([
+    #             html.Td(df_sql_doi.iloc[i][col]) for col in df_sql_doi.columns
+    #         ]) for i in range(min(len(df_sql_doi), max_rows))
+    #     ])
+    # ])
+    # output2 = html.Table([
+    #     html.Thead(
+    #         html.Tr([html.Th(col) for col in df_key.columns])
+    #     ),
+    #     html.Tbody([
+    #         html.Tr([
+    #             html.Td(df_key.iloc[i][col]) for col in df_key.columns
+    #         ]) for i in range(min(len(df_key), max_rows))
+    #     ])
+    # ], style={'margin-left': 'auto', 'margin-right': 'auto', 'margin-top': '50px'})
+
+    # temporary disabled
+
+    # output2 = dash_table.DataTable(
+    #     id='datatable-temp',
+    #     data=df_key.to_dict('records'),
+    #     columns=[{'id': c, 'name': c} for c in df_key.columns],
+    #     page_size=10,
+    #     row_selectable="single",
+    #     selected_rows=[],
+    #     style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+    #     style_header={
+    #         'backgroundColor': 'rgb(230, 230, 230)',
+    #         'fontWeight': 'bold'
+    #     }
+    # )
+    output2 = df_key.to_dict('records')
+    output_c = [{'id': c, 'name': c} for c in df_key.columns]
+    output1 = dash_table.DataTable(
+        data=df_sql_doi.to_dict('records'),
+        columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+        page_size=10,
+        style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+        style_header={
+            'backgroundColor': 'rgb(230, 230, 230)',
+            'fontWeight': 'bold'
+        }
+    )
+
+    output3 = dash_table.DataTable(
+        data=df_auth.to_dict('records'),
+        columns=[{'id': c, 'name': c} for c in df_auth.columns],
+        page_size=10,
+        style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+        style_header={
+            'backgroundColor': 'rgb(230, 230, 230)',
+            'fontWeight': 'bold'
+        }
+    )
+
+    output4 = dash_table.DataTable(
+        data=df_countr.to_dict('records'),
+        columns=[{'id': c, 'name': c} for c in df_countr.columns],
+        page_size=10,
+        style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+        style_header={
+            'backgroundColor': 'rgb(230, 230, 230)',
+            'fontWeight': 'bold'
+        }
+    )
+
+    return output1, output2, output_c, output3, output4
+
+
+@app.callback(Output('output-density-article', 'children'),
+              [Input('datatable-temp', 'derived_virtual_row_ids'),
+               Input('keyword-button-state', 'n_clicks'),
+               Input('datatable-temp', 'derived_virtual_selected_rows')],
+              [State('year-slider', 'value'),
+               # State('output-density-article', 'selected_row_ids'),
+               State('input-1-state', 'value')])
+def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
+    # selected_id_set = set(selected_row_ids or [])
+    print(selected_row_ids)
+    df_sql_article = pd.DataFrame()
+    if selected_row_ids is None or len(selected_row_ids) == 0:
+        # dff = df
+        output = ' nothing is selected '
+        print('i am in none')
+        # pandas Series works enough like a list for this to be OK
+        # row_ids = df['id']
+    else:
+        print(' i am in the else', selected_row_ids[0])
+        selected_search = df_key_share.loc[selected_row_ids[0]]['keyword']
+        print(selected_search)
+        print(type(selected_search))
+        # dff = df.loc[selected_id_set]
+        # sqlite read
+        year_list = list(range(user_year[0], user_year[1] + 1, 1))
+        if len(year_list) == 1:
+            year_list.append(year_list[0])
+
+        sql_jn = """
+            SELECT journal_name
+            FROM journal_list
+            """
+        for row in cursor.execute(sql_jn):
+            jn = str(row[0])
+            # select id of each paper based on different journal name
+            sql_final = """
+            SELECT paper_doi, paper_name
+            FROM {temp_paper_list}
+            WHERE paper_id IN (SELECT paper_id
+            FROM {temp_paper_list}
+            WHERE paper_abstract LIKE '%{user_search_temp}%'
+            )
+            AND
+             paper_id IN (SELECT paper_id
+             FROM {temp_jn}
+             WHERE keyword_id IN ( SELECT keyword_id
+             FROM keyword_list
+             WHERE keyword LIKE '%{selected_search_temp}%'
+             ))
+            AND
+             paper_id IN (SELECT paper_id
+             FROM {temp_paper_list}
+             WHERE paper_year IN ( SELECT year_id
+             FROM year_list
+             WHERE year IN {temp_year}
+             ))
+                 ;""".format(temp_jn='paper_keyword_' + jn.replace(" ", "_"),
+                             temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                             user_search_temp=input1,
+                             temp_year=str(tuple(year_list)),
+                             selected_search_temp=selected_search)
+            df_sql_article = df_sql_article.append(pd.read_sql_query(sql_final, conn))
+        print(df_sql_article)
+        df_sql_article = df_sql_article.reset_index()
+        output = dash_table.DataTable(
+            data=df_sql_article.to_dict('records'),
+            columns=[{'id': c, 'name': c} for c in df_sql_article.columns],
+            page_size=10,
+            style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            }
+        )
+    return output
+
+
+if __name__ == '__main__':
+    app.run_server(debug=True)
