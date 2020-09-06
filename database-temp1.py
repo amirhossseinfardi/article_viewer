@@ -74,6 +74,8 @@ app.layout = html.Div(
         ]),
         html.Button(id='keyword-button-state', n_clicks=0, children='Show Article',
                     style={'background-color': '#44c767'}),
+        html.Div(id='keyword-list',
+                 style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
         html.Div(id='output-density-article',
                  style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
         html.Div(id='output-author',
@@ -86,8 +88,9 @@ app.layout = html.Div(
 @app.callback([Output('output-table', 'children'),
                Output('datatable-temp', 'data'),
                Output('datatable-temp', 'columns'),
-               # Output('output-author', 'children'),
-               Output('output-country', 'children')],
+               # Output('keyword-list', 'children'),
+               Output('output-country', 'children')
+               ],
               [Input('submit-button-state', 'n_clicks')],
               [State('input-1-state', 'value'),
                State('year-slider', 'value')]
@@ -284,7 +287,9 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     return output1, output2, output_c, output4
 
 
-@app.callback(Output('output-density-article', 'children'),
+@app.callback([Output('output-density-article', 'children'),
+               Output('keyword-list', 'children')
+               ],
               [Input('datatable-temp', 'derived_virtual_row_ids'),
                Input('keyword-button-state', 'n_clicks'),
                Input('datatable-temp', 'derived_virtual_selected_rows')],
@@ -298,6 +303,7 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
     if selected_row_ids is None or len(selected_row_ids) == 0:
         # dff = df
         output = ' nothing is selected '
+        output1 = ' no keyword selected '
         print('i am in none')
         # pandas Series works enough like a list for this to be OK
         # row_ids = df['id']
@@ -359,7 +365,20 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                 'fontWeight': 'bold'
             }
         )
-    return output
+
+        # get list of keyword i searched
+        keyword_sql = """
+        SELECT keyword
+             FROM keyword_list
+             WHERE keyword LIKE '%{selected_search_temp}%'
+        """.format(selected_search_temp=selected_search)
+        df_list_keyword = pd.read_sql_query(keyword_sql, conn)
+        keyword_string = 'Searched keyword is : '
+        for nnn in df_list_keyword['keyword']:
+            # add keyword to sting
+            keyword_string += nnn + ', '
+        output1 = keyword_string
+    return output, output1
 
 
 # update author table that variable by keyword selection
