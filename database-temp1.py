@@ -39,7 +39,7 @@ app.layout = html.Div(
     children=[
         dcc.Input(id='input-1-state', type='text', value='CFD'),
         html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
-        html.H4(children='Search in Database @amirhosseinfardi'),
+        html.H4(children='Search in Database @SamenPayesh'),
         html.Div([
             dcc.RangeSlider(
                 id='year-slider',
@@ -86,7 +86,7 @@ app.layout = html.Div(
 @app.callback([Output('output-table', 'children'),
                Output('datatable-temp', 'data'),
                Output('datatable-temp', 'columns'),
-               Output('output-author', 'children'),
+               # Output('output-author', 'children'),
                Output('output-country', 'children')],
               [Input('submit-button-state', 'n_clicks')],
               [State('input-1-state', 'value'),
@@ -98,10 +98,10 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     if len(year_list) == 1:
         year_list.append(year_list[0])
     keylist = []
-    author_list = []
+    # author_list = []
     country_list = []
     df_key = pd.DataFrame(columns=['keyword'])
-    df_auth = pd.DataFrame(columns=['author_name'])
+    # df_auth = pd.DataFrame(columns=['author_name'])
     df_countr = pd.DataFrame(columns=['country_name'])
     df_sql_doi = pd.DataFrame()
     # get journal name available in database
@@ -144,33 +144,33 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
             keylist.append(df_keyword.iloc[0]['keyword'])
 
         # select id of each author based on different journal name
-        sql_author = """
-         SELECT author_id
-         FROM {temp_jn}
-         WHERE paper_id IN (SELECT paper_id
-         FROM {temp_paper_list}
-         WHERE paper_abstract LIKE '%{user_search_temp}%'
-         )
-         AND
-         paper_id IN (SELECT paper_id
-         FROM {temp_paper_list}
-         WHERE paper_year IN ( SELECT year_id
-         FROM year_list
-         WHERE year IN {temp_year}
-         ))
-         ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
-                     temp_paper_list='paper_list_' + jn.replace(" ", "_"),
-                     user_search_temp=input1,
-                     temp_year=str(tuple(year_list)))
-        df3 = pd.read_sql_query(sql_author, conn)
-        for mmm in df3['author_id']:
-            # get author
-            sql_author = '''
-                        SELECT author_name
-                        FROM author_list
-                        WHERE author_id = {}'''.format(str(mmm))
-            df_author = pd.read_sql_query(sql_author, conn)
-            author_list.append(df_author.iloc[0]['author_name'])
+        # sql_author = """
+        #  SELECT author_id
+        #  FROM {temp_jn}
+        #  WHERE paper_id IN (SELECT paper_id
+        #  FROM {temp_paper_list}
+        #  WHERE paper_abstract LIKE '%{user_search_temp}%'
+        #  )
+        #  AND
+        #  paper_id IN (SELECT paper_id
+        #  FROM {temp_paper_list}
+        #  WHERE paper_year IN ( SELECT year_id
+        #  FROM year_list
+        #  WHERE year IN {temp_year}
+        #  ))
+        #  ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
+        #              temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+        #              user_search_temp=input1,
+        #              temp_year=str(tuple(year_list)))
+        # df3 = pd.read_sql_query(sql_author, conn)
+        # for mmm in df3['author_id']:
+        #     # get author
+        #     sql_author = '''
+        #                 SELECT author_name
+        #                 FROM author_list
+        #                 WHERE author_id = {}'''.format(str(mmm))
+        #     df_author = pd.read_sql_query(sql_author, conn)
+        #     author_list.append(df_author.iloc[0]['author_name'])
 
         # get name and doi of article
         sql_doi = """
@@ -233,8 +233,8 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     df_key = df_key.keyword.value_counts().rename_axis('keyword').reset_index(name='counts')
     global df_key_share
     df_key_share = df_key
-    df_auth['author_name'] = author_list
-    df_auth = df_auth.author_name.value_counts().rename_axis('author_name').reset_index(name='counts')
+    # df_auth['author_name'] = author_list
+    # df_auth = df_auth.author_name.value_counts().rename_axis('author_name').reset_index(name='counts')
     # merge same country
     dict_country = {'the Netherlands': 'Netherlands',
                     'The Netherlands': 'Netherlands',
@@ -302,16 +302,16 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
         }
     )
 
-    output3 = dash_table.DataTable(
-        data=df_auth.to_dict('records'),
-        columns=[{'id': c, 'name': c} for c in df_auth.columns],
-        page_size=10,
-        style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
-        style_header={
-            'backgroundColor': 'rgb(230, 230, 230)',
-            'fontWeight': 'bold'
-        }
-    )
+    # output3 = dash_table.DataTable(
+    #     data=df_auth.to_dict('records'),
+    #     columns=[{'id': c, 'name': c} for c in df_auth.columns],
+    #     page_size=10,
+    #     style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+    #     style_header={
+    #         'backgroundColor': 'rgb(230, 230, 230)',
+    #         'fontWeight': 'bold'
+    #     }
+    # )
 
     output4 = dash_table.DataTable(
         data=df_countr.to_dict('records'),
@@ -324,7 +324,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
         }
     )
 
-    return output1, output2, output_c, output3, output4
+    return output1, output2, output_c, output4
 
 
 @app.callback(Output('output-density-article', 'children'),
@@ -346,6 +346,7 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
         # row_ids = df['id']
     else:
         print(' i am in the else', selected_row_ids[0])
+        print(df_key_share)
         selected_search = df_key_share.loc[selected_row_ids[0]]['keyword']
         print(selected_search)
         print(type(selected_search))
@@ -401,6 +402,148 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                 'fontWeight': 'bold'
             }
         )
+    return output
+
+
+@app.callback(Output('output-author', 'children'),
+              [Input('datatable-temp', 'derived_virtual_row_ids'),
+               Input('keyword-button-state', 'n_clicks'),
+               Input('datatable-temp', 'derived_virtual_selected_rows')],
+              [State('year-slider', 'value'),
+               # State('output-density-article', 'selected_row_ids'),
+               State('input-1-state', 'value')])
+def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
+    # update year list -----------------
+    year_list = list(range(user_year[0], user_year[1] + 1, 1))
+    if len(year_list) == 1:
+        year_list.append(year_list[0])
+    # year updated ----------------
+
+    # define variable for author ---
+    author_list = []
+    df_auth = pd.DataFrame(columns=['author_name'])
+    print('selected row from author', selected_row_ids)
+    if selected_row_ids is None or len(selected_row_ids) == 0:
+        # get all author based on search
+        # get journal name available in database
+        sql_jn = """
+            SELECT journal_name
+            FROM journal_list
+            """
+        for row in cursor.execute(sql_jn):
+            jn = str(row[0])
+            # select id of each author based on different journal name
+            sql_author = """
+                     SELECT author_id
+                     FROM {temp_jn}
+                     WHERE paper_id IN (SELECT paper_id
+                     FROM {temp_paper_list}
+                     WHERE paper_abstract LIKE '%{user_search_temp}%'
+                     )
+                     AND
+                     paper_id IN (SELECT paper_id
+                     FROM {temp_paper_list}
+                     WHERE paper_year IN ( SELECT year_id
+                     FROM year_list
+                     WHERE year IN {temp_year}
+                     ))
+                     ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
+                                 temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                                 user_search_temp=input1,
+                                 temp_year=str(tuple(year_list)))
+            df3 = pd.read_sql_query(sql_author, conn)
+            for mmm in df3['author_id']:
+                # get author
+                sql_author = '''
+                                    SELECT author_name
+                                    FROM author_list
+                                    WHERE author_id = {}'''.format(str(mmm))
+                df_author = pd.read_sql_query(sql_author, conn)
+                author_list.append(df_author.iloc[0]['author_name'])
+
+        df_auth['author_name'] = author_list
+        df_auth = df_auth.author_name.value_counts().rename_axis('author_name').reset_index(name='counts')
+        output = dash_table.DataTable(
+            data=df_auth.to_dict('records'),
+            columns=[{'id': c, 'name': c} for c in df_auth.columns],
+            page_size=10,
+            style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            }
+        )
+        print('i am in none - author')
+        # pandas Series works enough like a list for this to be OK
+        # row_ids = df['id']
+    else:
+        print(' i am in the else author', selected_row_ids[0])
+        print(df_key_share)
+        selected_search = df_key_share.loc[selected_row_ids[0]]['keyword']
+        print(selected_search)
+        print(type(selected_search))
+        # dff = df.loc[selected_id_set]
+        # sqlite read
+        year_list = list(range(user_year[0], user_year[1] + 1, 1))
+        if len(year_list) == 1:
+            year_list.append(year_list[0])
+        sql_jn = """
+            SELECT journal_name
+            FROM journal_list
+            """
+        for row in cursor.execute(sql_jn):
+            jn = str(row[0])
+            # select id of each author based on different journal name
+            sql_author = """
+                     SELECT author_id
+                     FROM {temp_jn}
+                     WHERE paper_id IN (SELECT paper_id
+                     FROM {temp_paper_list}
+                     WHERE paper_abstract LIKE '%{user_search_temp}%'
+                     )
+                     AND
+                     paper_id IN (SELECT paper_id
+                     FROM {temp_key_jn}
+                     WHERE keyword_id IN ( SELECT keyword_id
+                     FROM keyword_list
+                     WHERE keyword LIKE '%{selected_search_temp}%'
+                     ))
+                     AND
+                     paper_id IN (SELECT paper_id
+                     FROM {temp_paper_list}
+                     WHERE paper_year IN ( SELECT year_id
+                     FROM year_list
+                     WHERE year IN {temp_year}
+                     ))
+                     ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
+                                 temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                                 user_search_temp=input1,
+                                 temp_year=str(tuple(year_list)),
+                                 temp_key_jn='paper_keyword_' + jn.replace(" ", "_"),
+                                 selected_search_temp=selected_search)
+            df3 = pd.read_sql_query(sql_author, conn)
+            for mmm in df3['author_id']:
+                # get author
+                sql_author = '''
+                                    SELECT author_name
+                                    FROM author_list
+                                    WHERE author_id = {}'''.format(str(mmm))
+                df_author = pd.read_sql_query(sql_author, conn)
+                author_list.append(df_author.iloc[0]['author_name'])
+
+        df_auth['author_name'] = author_list
+        df_auth = df_auth.author_name.value_counts().rename_axis('author_name').reset_index(name='counts')
+        output = dash_table.DataTable(
+            data=df_auth.to_dict('records'),
+            columns=[{'id': c, 'name': c} for c in df_auth.columns],
+            page_size=10,
+            style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+            style_header={
+                'backgroundColor': 'rgb(230, 230, 230)',
+                'fontWeight': 'bold'
+            }
+        )
+
     return output
 
 
