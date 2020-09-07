@@ -7,6 +7,7 @@ import dash_html_components as html
 import pandas as pd
 from dash.dependencies import Input, Output, State
 import dash_table
+import os
 
 conn = sqlite3.connect('temp.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -536,4 +537,6 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
 
 
 if __name__ == '__main__':
+    os.system(r"C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\Run.bat")
     app.run_server(debug=True)
+
