@@ -56,14 +56,39 @@ app.layout = html.Div(
 
         html.Div([
             html.Div([
-                html.Div(id='output-table')
+                # html.Div(id='output-table')
+                dash_table.DataTable(
+                    id='output-table',
+                    # data=df_sql_doi.to_dict('records'),
+                    # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+                    page_size=10,
+                    style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal',
+                                'height': 'auto'},
+                    style_header={
+                        'backgroundColor': 'rgb(230, 230, 230)',
+                        'fontWeight': 'bold'
+                    },
+                    style_cell_conditional=[
+                        {'if': {'column_id': 'paper_doi'},
+                         'width': '20%'}
+                        # {'if': {'column_id': 'paper_doi'},
+                        #  'overflow': 'hidden',
+                        #  'textOverflow': 'ellipsis',
+                        #  'maxWidth': 0}
+                    ],
+                    row_selectable="multi",
+                    selected_rows=[]
+                )
+
             ], className="eight columns",
                 style={'border': '2px solid #73AD21'}),
 
-            html.Div([
-                # html.H3('Column 2'),
-                dcc.Graph(id='g2', figure={'data': [{'y': [1, 2, 3]}]})
-            ], className="four columns"),
+            html.Div(id='output-abstract'
+                     # html.H3('Column 2'),
+                     # dcc.Graph(id='g2', figure={'data': [{'y': [1, 2, 3]}]})
+
+                     , className="four columns",
+                     style={'border': '2px solid #73AD21'}),
         ],
             className="row"),
 
@@ -99,7 +124,9 @@ app.layout = html.Div(
     ])
 
 
-@app.callback([Output('output-table', 'children'),
+@app.callback([Output('output-table', 'data'),
+               Output('output-table', 'columns'),
+               Output('output-table', 'selected_rows'),
                Output('datatable-temp', 'data'),
                Output('datatable-temp', 'columns'),
                # Output('keyword-list', 'children'),
@@ -119,6 +146,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     df_key = pd.DataFrame(columns=['keyword'])
     df_countr = pd.DataFrame(columns=['country_name'])
     df_sql_doi = pd.DataFrame()
+    df_full_sql_doi = pd.DataFrame()
     # get journal name available in database
     sql_jn = """
     SELECT journal_name
@@ -160,7 +188,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
 
         # get name and doi of article
         sql_doi = """
-        SELECT paper_doi, paper_name
+        SELECT paper_doi, paper_name, paper_abstract
         FROM {temp_paper_list}
         WHERE paper_id IN (SELECT paper_id
         FROM {temp_paper_list}
@@ -178,7 +206,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
             user_search_temp=input1,
             temp_year=str(tuple(year_list))
         )
-        df_sql_doi = df_sql_doi.append(pd.read_sql_query(sql_doi, conn))
+        df_full_sql_doi = df_full_sql_doi.append(pd.read_sql_query(sql_doi, conn))
 
         # get country first ID and then get name through the loop
         sql_country = """
@@ -274,26 +302,32 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     #         'fontWeight': 'bold'
     #     }
     # )
-    output2 = df_key.to_dict('records')
-    output_c = [{'id': c, 'name': c} for c in df_key.columns]
-    output1 = dash_table.DataTable(
-        data=df_sql_doi.to_dict('records'),
-        columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
-        page_size=10,
-        style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal', 'height': 'auto'},
-        style_header={
-            'backgroundColor': 'rgb(230, 230, 230)',
-            'fontWeight': 'bold'
-        },
-        style_cell_conditional=[
-            {'if': {'column_id': 'paper_doi'},
-             'width': '20%'}
-            # {'if': {'column_id': 'paper_doi'},
-            #  'overflow': 'hidden',
-            #  'textOverflow': 'ellipsis',
-            #  'maxWidth': 0}
-        ]
-    )
+    output2_data = df_key.to_dict('records')
+    output2_column = [{'id': c, 'name': c} for c in df_key.columns]
+    # output1 = dash_table.DataTable(
+    #     data=df_sql_doi.to_dict('records'),
+    #     columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+    #     page_size=10,
+    #     style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal', 'height': 'auto'},
+    #     style_header={
+    #         'backgroundColor': 'rgb(230, 230, 230)',
+    #         'fontWeight': 'bold'
+    #     },
+    #     style_cell_conditional=[
+    #         {'if': {'column_id': 'paper_doi'},
+    #          'width': '20%'}
+    #         # {'if': {'column_id': 'paper_doi'},
+    #         #  'overflow': 'hidden',
+    #         #  'textOverflow': 'ellipsis',
+    #         #  'maxWidth': 0}
+    #     ]
+    # )
+    global df_sql_share
+    df_full_sql_doi = df_full_sql_doi.reset_index()
+    df_sql_share = df_full_sql_doi
+    df_sql_doi = df_full_sql_doi.drop('paper_abstract', 1)
+    output1_data = df_sql_doi.to_dict('records')
+    output1_column = [{'id': c, 'name': c} for c in df_sql_doi.columns]
 
     output4 = dash_table.DataTable(
         data=df_countr.to_dict('records'),
@@ -306,7 +340,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
         }
     )
 
-    return output1, output2, output_c, output4
+    return output1_data, output1_column, [], output2_data, output2_column, output4
 
 
 @app.callback([Output('output-density-article', 'children'),
@@ -554,6 +588,28 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
             }
         )
 
+    return output
+
+
+# show abstract
+@app.callback(Output('output-abstract', 'children'),
+              [Input('output-table', 'derived_virtual_row_ids'),
+               Input('output-table', 'derived_virtual_selected_rows')],
+              )
+def showAbstract(xxx, selected_row_ids):
+    # update year list -----------------
+    print('abstract', selected_row_ids)
+    if selected_row_ids is None or len(selected_row_ids) == 0:
+        output = ' nothing selected'
+    else:
+        df = df_sql_share
+        abstract = df.loc[selected_row_ids[0]]['paper_abstract']
+        print(abstract)
+        output = dcc.Textarea(
+            id='textarea-state-example',
+            value=abstract,
+            style={'width': '100%', 'height': 500},
+        )
     return output
 
 
