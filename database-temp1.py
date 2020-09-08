@@ -19,6 +19,22 @@ from year_list
 '''
 df_years = pd.read_sql_query(sql_year, conn)
 
+# get number of paper
+# sqlite read data counting
+countPaper = 0
+sql_jn = """
+    SELECT journal_name
+    FROM journal_list
+    """
+for row in cursor.execute(sql_jn):
+    jn = str(row[0])
+    sql_count = """SELECT COUNT (*) FROM {}""".format('paper_list_' + jn.replace(" ", "_"))
+    cursor.execute(sql_count)
+    rowcount = cursor.fetchone()[0]
+    countPaper = countPaper + rowcount
+couting_output = 'Total number of paper in database is: ' + str(countPaper)
+# finished read number of paper
+
 # def generate_table(dataframe, max_rows=10):
 #     return html.Table([
 #         html.Thead(
@@ -41,6 +57,8 @@ app.layout = html.Div(
         dcc.Input(id='input-1-state', type='text', value='CFD'),
         html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
         html.H4(children='Search in Database @SamenPayesh'),
+        html.H5(children=couting_output),
+        html.H5(children='Slider of paper Dates'),
         html.Div([
             dcc.RangeSlider(
                 id='year-slider',
@@ -122,6 +140,24 @@ app.layout = html.Div(
         html.Div(id='output-country',
                  style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'})
     ])
+
+
+# @app.callback(Output('output-count', 'children'))
+# def showCounting():
+#     # sqlite read data counting
+#     countPaper = 0
+#     sql_jn = """
+#         SELECT journal_name
+#         FROM journal_list
+#         """
+#     for row in cursor.execute(sql_jn):
+#         jn = str(row[0])
+#         sql_count = """SELECT COUNT (*) FROM {}""".format('paper_list_' + jn.replace(" ", "_"))
+#         cursor.execute(sql_count)
+#         rowcount = cursor.fetchone()[0]
+#         countPaper = countPaper + rowcount
+#     output = 'Total number of paper in database is: ' + str(countPaper)
+#     return output
 
 
 @app.callback([Output('output-table', 'data'),
