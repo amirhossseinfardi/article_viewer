@@ -26,11 +26,14 @@ sql_jn = """
     SELECT journal_name
     FROM journal_list
     """
-for row in cursor.execute(sql_jn):
+table = cursor.execute(sql_jn).fetchall()
+for row in table:
     jn = str(row[0])
+    print(jn)
     sql_count = """SELECT COUNT (*) FROM {}""".format('paper_list_' + jn.replace(" ", "_"))
     cursor.execute(sql_count)
     rowcount = cursor.fetchone()[0]
+    print(rowcount)
     countPaper = countPaper + rowcount
 couting_output = 'Total number of paper in database is: ' + str(countPaper)
 # finished read number of paper
@@ -636,7 +639,8 @@ def showAbstract(xxx, selected_row_ids):
     # update year list -----------------
     print('abstract', selected_row_ids)
     if selected_row_ids is None or len(selected_row_ids) == 0:
-        output = ' nothing selected'
+        output = ' Nothing selected.\n ' \
+                 'select paper to show abstract'
     else:
         df = df_sql_share
         abstract = df.loc[selected_row_ids[0]]['paper_abstract']
