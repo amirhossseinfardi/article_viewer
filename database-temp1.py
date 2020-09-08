@@ -53,7 +53,20 @@ app.layout = html.Div(
             ),
             html.Div(id='output-container-range-slider')
         ]),
-        html.Div(id='output-table'),
+
+        html.Div([
+            html.Div([
+                html.Div(id='output-table')
+            ], className="eight columns",
+                style={'border': '2px solid #73AD21'}),
+
+            html.Div([
+                # html.H3('Column 2'),
+                dcc.Graph(id='g2', figure={'data': [{'y': [1, 2, 3]}]})
+            ], className="four columns"),
+        ],
+            className="row"),
+
         # html.Div(id='output-density',
         #          style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'textAlign': 'center',
         #                 'border': '2px solid #73AD21'}),
@@ -147,7 +160,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
 
         # get name and doi of article
         sql_doi = """
-        SELECT paper_doi, paper_name, paper_id
+        SELECT paper_doi, paper_name
         FROM {temp_paper_list}
         WHERE paper_id IN (SELECT paper_id
         FROM {temp_paper_list}
@@ -267,11 +280,19 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
         data=df_sql_doi.to_dict('records'),
         columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
         page_size=10,
-        style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+        style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal', 'height': 'auto'},
         style_header={
             'backgroundColor': 'rgb(230, 230, 230)',
             'fontWeight': 'bold'
-        }
+        },
+        style_cell_conditional=[
+            {'if': {'column_id': 'paper_doi'},
+             'width': '20%'}
+            # {'if': {'column_id': 'paper_doi'},
+            #  'overflow': 'hidden',
+            #  'textOverflow': 'ellipsis',
+            #  'maxWidth': 0}
+        ]
     )
 
     output4 = dash_table.DataTable(
@@ -539,4 +560,3 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
 if __name__ == '__main__':
     os.system(r"C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\Run.bat")
     app.run_server(debug=True)
-
