@@ -193,7 +193,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     """
     for row in cursor.execute(sql_jn):
         jn = str(row[0])
-        # print(jn)
+        print(jn)
         # select id of each keyword based on different journal name
         sql_final = """
          SELECT keyword_id
