@@ -367,7 +367,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     #     ]
     # )
     global df_sql_share
-    df_full_sql_doi = df_full_sql_doi.reset_index()
+    df_full_sql_doi = df_full_sql_doi.reset_index(drop=True)
     df_sql_share = df_full_sql_doi
     df_sql_doi = df_full_sql_doi.drop('paper_abstract', 1)
     output1_data = df_sql_doi.to_dict('records')
@@ -454,7 +454,7 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                              selected_search_temp=selected_search)
             df_sql_article = df_sql_article.append(pd.read_sql_query(sql_final, conn))
         print(df_sql_article)
-        df_sql_article = df_sql_article.reset_index()
+        df_sql_article = df_sql_article.reset_index(drop=True)
         output = dash_table.DataTable(
             data=df_sql_article.to_dict('records'),
             columns=[{'id': c, 'name': c} for c in df_sql_article.columns],
