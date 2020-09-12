@@ -59,9 +59,9 @@ app.layout = html.Div(
     children=[
         dcc.Input(id='input-1-state', type='text', value='CFD'),
         html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
-        html.H4(children='Search in Database @SamenPayesh'),
+        html.H4(children='Search in SamenPayesh database'),
         html.H5(children=couting_output),
-        html.H5(children='Slider of paper Dates'),
+        html.H5(children='Paper Dates', style={'margin-top': '30px'}),
         html.Div([
             dcc.RangeSlider(
                 id='year-slider',
@@ -109,9 +109,9 @@ app.layout = html.Div(
                      # dcc.Graph(id='g2', figure={'data': [{'y': [1, 2, 3]}]})
 
                      , className="four columns",
-                     style={'border': '2px solid #73AD21'}),
+                     style={'border': '2px solid #b78846'}),
         ],
-            className="row"),
+            className="row", style={'margin-top': '30px'}),
 
         # html.Div(id='output-density',
         #          style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'textAlign': 'center',
@@ -131,17 +131,22 @@ app.layout = html.Div(
                 }
             )
 
-        ]),
+        ], style={'margin-top': '30px'}),
         html.Button(id='keyword-button-state', n_clicks=0, children='Show Article',
                     style={'background-color': '#44c767'}),
         html.Div(id='keyword-list',
                  style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
         html.Div(id='output-density-article',
                  style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
-        html.Div(id='output-author',
-                 style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
-        html.Div(id='output-country',
-                 style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'})
+        html.Div([
+            html.Div(id='output-author',
+                     className='six columns',
+                     style={'width': '50%', 'float': 'left', 'border': '2px solid #73AD21'}),
+            html.Div(id='output-country',
+                     className='six columns',
+                     style={'margin-left': '10%', 'border': '2px solid #73AD21'})
+
+        ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'})
     ])
 
 
