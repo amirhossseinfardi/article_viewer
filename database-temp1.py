@@ -641,7 +641,6 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
                Input('output-table', 'derived_virtual_selected_rows')],
               )
 def showAbstract(xxx, selected_row_ids):
-    # update year list -----------------
     print('abstract', selected_row_ids)
     if selected_row_ids is None or len(selected_row_ids) == 0:
         output = ' Nothing selected.\n ' \
