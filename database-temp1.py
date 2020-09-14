@@ -75,43 +75,61 @@ app.layout = html.Div(
             html.Div(id='output-container-range-slider')
         ]),
 
-        html.Div([
+        html.Div(
             html.Div([
-                # html.Div(id='output-table')
-                dash_table.DataTable(
-                    id='output-table',
-                    # data=df_sql_doi.to_dict('records'),
-                    # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
-                    page_size=10,
-                    style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal',
-                                'height': 'auto'},
-                    style_header={
-                        'backgroundColor': 'rgb(230, 230, 230)',
-                        'fontWeight': 'bold'
-                    },
-                    style_cell_conditional=[
-                        {'if': {'column_id': 'paper_doi'},
-                         'width': '20%'}
-                        # {'if': {'column_id': 'paper_doi'},
-                        #  'overflow': 'hidden',
-                        #  'textOverflow': 'ellipsis',
-                        #  'maxWidth': 0}
-                    ],
-                    row_selectable="multi",
-                    selected_rows=[]
-                )
+                html.Div([
+                    # html.Div(id='output-table')
+                    dash_table.DataTable(
+                        id='output-table',
+                        # data=df_sql_doi.to_dict('records'),
+                        # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+                        page_size=10,
+                        style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal',
+                                    'height': 'auto'},
+                        style_header={
+                            'backgroundColor': 'rgb(230, 230, 230)',
+                            'fontWeight': 'bold'
+                        },
+                        style_cell_conditional=[
+                            {'if': {'column_id': 'paper_doi'},
+                             'width': '20%'}
+                            # {'if': {'column_id': 'paper_doi'},
+                            #  'overflow': 'hidden',
+                            #  'textOverflow': 'ellipsis',
+                            #  'maxWidth': 0}
+                        ],
+                        row_selectable="multi",
+                        selected_rows=[]
+                    )
 
-            ], className="eight columns",
-                style={'border': '2px solid #73AD21'}),
+                ], className="eight columns",
+                    style={'border': '2px solid #73AD21'}),
 
-            html.Div(id='output-abstract'
-                     # html.H3('Column 2'),
-                     # dcc.Graph(id='g2', figure={'data': [{'y': [1, 2, 3]}]})
+                html.Div([
+                    html.Div(id='output-name'),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(id='abstract-output-author'),
+                    html.Hr(style={'margin': '2px'}),
 
-                     , className="four columns",
-                     style={'border': '2px solid #b78846'}),
-        ],
-            className="row", style={'margin-top': '30px'}),
+                    html.Div(id='output-date'),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(id='abstract-output-country'),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(
+                        id='output-abstract'
+                        # , style={'border': '2px solid #b78846'}
+                    ),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(
+                        id='output-doi'
+                        # , style={'border': '2px solid #b78846'}
+                    )
+
+                ]
+                    , className="four columns"),
+            ],
+                style={'margin-top': '30px'}),
+            className='row'),
 
         # html.Div(id='output-density',
         #          style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'textAlign': 'center',
@@ -635,26 +653,106 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
     return output
 
 
-# show abstract
-@app.callback(Output('output-abstract', 'children'),
+# show paper detail after selecting
+@app.callback([Output('output-abstract', 'children'),
+               Output('output-doi', 'children'),
+               Output('output-name', 'children'),
+               Output('abstract-output-author', 'children'),
+               Output('output-date', 'children'),
+               Output('abstract-output-country', 'children')
+               ],
               [Input('output-table', 'derived_virtual_row_ids'),
                Input('output-table', 'derived_virtual_selected_rows')],
               )
 def showAbstract(xxx, selected_row_ids):
-    print('abstract', selected_row_ids)
     if selected_row_ids is None or len(selected_row_ids) == 0:
-        output = ' Nothing selected.\n ' \
-                 'select paper to show abstract'
+        output1 = ' Nothing selected.\n ' \
+                  'select paper to show abstract'
+        output2 = 'Nothing selected'
+        output3 = 'Nothing selected'
+        output4 = 'Nothing selected'
+        output5 = 'Nothing selected'
+        output6 = 'Nothing selected'
     else:
         df = df_sql_share
         abstract = df.loc[selected_row_ids[0]]['paper_abstract']
         print(abstract)
-        output = dcc.Textarea(
-            id='textarea-state-example',
-            value=abstract,
-            style={'width': '100%', 'height': 500},
+        doi = df.loc[selected_row_ids[0]]['paper_doi']
+        paper_name = df.loc[selected_row_ids[0]]['paper_name']
+        author_list = []
+        sql_jn = """
+            SELECT journal_name
+            FROM journal_list
+            """
+        for row in cursor.execute(sql_jn):
+            jn = str(row[0])
+            sql_id = '''
+            SELECT paper_id
+            FROM {temp_paper_list}
+            WHERE paper_name LIKE '%{name_temp}%'
+            '''.format(
+                temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                name_temp=paper_name
+            )
+            x_check = pd.read_sql_query(sql_id, conn)
+            if not x_check.empty:
+                print(x_check)
+                paper_id = x_check.iat[0, 0]
+                journal_name = jn.replace(" ", "_")
+        sql_author = '''
+        SELECT author_list.author_name
+        FROM author_list
+        INNER JOIN {temp_list} ON
+        {temp_list}.author_id = author_list.author_id
+        WHERE {temp_list}.paper_id = {temp_id}
+        '''.format(
+            temp_id=paper_id,
+            temp_list='paper_author_' + journal_name
         )
-    return output
+        sql_country = '''
+        SELECT country_list.country_name
+        FROM country_list
+        WHERE country_id in (
+        SELECT country_id
+        FROM {temp_list}
+        WHERE {temp_list}.paper_id = {temp_id}
+        )
+        '''.format(
+            temp_id=paper_id,
+            temp_list='paper_country_' + journal_name
+        )
+        sql_year = '''
+        SELECT year
+        FROM year_list
+        WHERE year_id = (
+        SELECT paper_year
+        FROM {temp_list}
+        WHERE paper_id = {temp_id}
+        )
+        '''.format(temp_list='paper_list_' + journal_name,
+                   temp_id=paper_id)
+
+        # show abstract
+        output1 = dcc.Textarea(
+            id='textarea-state-abstract',
+            value=abstract,
+            style={'width': '100%', 'height': 400}
+        )
+        # show doi
+        output2 = dcc.Textarea(
+            id='textarea-state-doi',
+            value=doi,
+            style={'width': '100%', 'height': 20}
+        )
+        # paper name
+        output3 = paper_name
+        # get author list
+        output4 = ', '.join(pd.read_sql_query(sql_author, conn)['author_name'].tolist())
+        # get year of paper
+        output5 = pd.read_sql_query(sql_year, conn).iat[0, 0]
+        # paper country
+        output6 = ', '.join(pd.read_sql_query(sql_country, conn)['country_name'].tolist())
+    return output1, output2, output3, output4, output5, output6
 
 
 if __name__ == '__main__':
