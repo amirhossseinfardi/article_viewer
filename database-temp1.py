@@ -123,8 +123,15 @@ app.layout = html.Div(
                     html.Div(
                         id='output-doi'
                         # , style={'border': '2px solid #b78846'}
-                    )
-
+                    ),
+                    html.Hr(style={'margin': '2px'}),
+                    html.A(id='link-paper', children=[
+                        html.Button('Get Paper', id='get-paper', n_clicks=0, style={'background-color': '#44c767'}),
+                    ],
+                           # href='www.google.com',
+                           target="_blank",
+                           # download=''
+                           )
                 ]
                     , className="four columns"),
             ],
@@ -659,7 +666,8 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
                Output('output-name', 'children'),
                Output('abstract-output-author', 'children'),
                Output('output-date', 'children'),
-               Output('abstract-output-country', 'children')
+               Output('abstract-output-country', 'children'),
+               Output('link-paper', 'href')
                ],
               [Input('output-table', 'derived_virtual_row_ids'),
                Input('output-table', 'derived_virtual_selected_rows')],
@@ -673,12 +681,15 @@ def showAbstract(xxx, selected_row_ids):
         output4 = 'Nothing selected'
         output5 = 'Nothing selected'
         output6 = 'Nothing selected'
+        output7 = ''
     else:
         df = df_sql_share
         abstract = df.loc[selected_row_ids[0]]['paper_abstract']
         print(abstract)
         doi = df.loc[selected_row_ids[0]]['paper_doi']
         paper_name = df.loc[selected_row_ids[0]]['paper_name']
+        global share_name
+        share_name = paper_name
         author_list = []
         sql_jn = """
             SELECT journal_name
@@ -731,7 +742,20 @@ def showAbstract(xxx, selected_row_ids):
         )
         '''.format(temp_list='paper_list_' + journal_name,
                    temp_id=paper_id)
-
+        #
+        # generate download paper link
+        try:
+            file_list = []
+            root = r'C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\tems'
+            for path, subdirs, files in os.walk(root):
+                for name in files:
+                    if paper_name in name:
+                        file_list.append(os.path.join(path, name))
+                        print(os.path.join(path, name))
+            print('--------------')
+            output7 = file_list[0]
+        except:
+            output7 = ''
         # show abstract
         output1 = dcc.Textarea(
             id='textarea-state-abstract',
@@ -752,7 +776,27 @@ def showAbstract(xxx, selected_row_ids):
         output5 = pd.read_sql_query(sql_year, conn).iat[0, 0]
         # paper country
         output6 = ', '.join(pd.read_sql_query(sql_country, conn)['country_name'].tolist())
-    return output1, output2, output3, output4, output5, output6
+    return output1, output2, output3, output4, output5, output6, output7
+
+
+# @app.callback(
+#     Output('hidden-div', 'children'),
+#     [Input('get-paper', 'n_clicks')]
+# )
+# def getPaper(n_click):
+#     # temo = r'C:\Python.pdf'
+#     # paper_name = share_name
+#     # # get the name and address of graph pdf
+#     # file_list = []
+#     # root = r'C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\tems'
+#     # for path, subdirs, files in os.walk(root):
+#     #     for name in files:
+#     #         if paper_name in name:
+#     #             file_list.append(os.path.join(path, name))
+#     #             print(os.path.join(path, name))
+#     # print('--------------')
+#     # output = file_list[0]
+#     return 'xxx'
 
 
 if __name__ == '__main__':
