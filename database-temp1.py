@@ -425,6 +425,7 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
     # selected_id_set = set(selected_row_ids or [])
     print(selected_row_ids)
     df_sql_article = pd.DataFrame()
+    df_sql_keyword = pd.DataFrame()
     if selected_row_ids is None or len(selected_row_ids) == 0:
         # dff = df
         output = ' nothing is selected '
@@ -478,6 +479,44 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                              temp_year=str(tuple(year_list)),
                              selected_search_temp=selected_search)
             df_sql_article = df_sql_article.append(pd.read_sql_query(sql_final, conn))
+
+            # get list of keyword i searched
+            keyword_sql = """
+                    SELECT keyword
+                    FROM keyword_list
+                    WHERE 
+                    keyword_id IN (
+                        SELECT keyword_id
+                        FROM {temp_paper_keyword}
+                        WHERE paper_id IN (
+                            SELECT paper_id
+                            FROM {temp_paper_list}
+                            WHERE paper_abstract LIKE '%{user_search_temp}%'
+                                           )
+                                    )
+                    AND
+                    keyword_id IN (
+                        SELECT keyword_id
+                        FROM keyword_list
+                        WHERE keyword LIKE '%{selected_search_temp}%'
+                                        )
+                    ;""".format(
+                selected_search_temp=selected_search,
+                temp_paper_keyword='paper_keyword_' + jn.replace(" ", "_"),
+                user_search_temp=input1,
+                temp_paper_list='paper_list_' + jn.replace(" ", "_")
+            )
+            kljfkl = '''
+                            AND
+                 keyword_id IN (
+                        SELECT keyword_id
+                        FROM keyword_list
+                        WHERE keyword LIKE '%{selected_search_temp}%'
+                                        )
+                    '''
+            df_sql_keyword = df_sql_keyword.append(pd.read_sql_query(keyword_sql, conn))
+
+
         print(df_sql_article)
         df_sql_article = df_sql_article.reset_index(drop=True)
         output = dash_table.DataTable(
@@ -491,17 +530,9 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
             }
         )
 
-        # get list of keyword i searched
-        keyword_sql = """
-        SELECT keyword
-             FROM keyword_list
-             WHERE keyword LIKE '%{selected_search_temp}%'
-        """.format(selected_search_temp=selected_search)
-        df_list_keyword = pd.read_sql_query(keyword_sql, conn)
-        keyword_string = 'Searched keyword is : '
-        for nnn in df_list_keyword['keyword']:
-            # add keyword to sting
-            keyword_string += nnn + ', '
+        df_list_keyword = df_sql_keyword['keyword'].tolist()
+        print(df_list_keyword)
+        keyword_string = ', '.join(df_list_keyword)
         output1 = keyword_string
     return output, output1
 
