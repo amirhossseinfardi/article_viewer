@@ -428,7 +428,7 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     global df_sql_share
     df_full_sql_doi = df_full_sql_doi.reset_index(drop=True)
     df_sql_share = df_full_sql_doi
-    df_sql_doi = df_full_sql_doi.drop('paper_abstract', 1)
+    df_sql_doi = df_full_sql_doi.drop(['paper_doi', 'paper_abstract'], 1)
     output1_data = df_sql_doi.to_dict('records')
     output1_column = [{'id': c, 'name': c} for c in df_sql_doi.columns]
 
