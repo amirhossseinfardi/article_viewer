@@ -9,11 +9,13 @@ import sqlite3
 from functools import reduce
 
 
-def createGraphAuthor(year_list, input1):
+def createGraphAuthor(user_year, input1):
     # read data from database
     conn = sqlite3.connect('temp.db')
     cursor = conn.cursor()
-
+    year_list = list(range(user_year[0], user_year[1] + 1, 1))
+    if len(year_list) == 1:
+        year_list.append(year_list[0])
     df_author = []
     sql_jn = """
     SELECT journal_name
