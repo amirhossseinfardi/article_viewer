@@ -115,9 +115,9 @@ app.layout = html.Div(
                     style={'border': '2px solid #73AD21'}),
 
                 html.Div([
-                    html.Div(id='output-name'),
+                    html.Div(id='output-name', style={'font-weight': 'bold'}),
                     html.Hr(style={'margin': '2px'}),
-                    html.Div(id='abstract-output-author'),
+                    html.Div(id='abstract-output-author', style={'font-style': 'italic'}),
                     html.Hr(style={'margin': '2px'}),
 
                     html.Div(id='output-date'),
@@ -126,7 +126,7 @@ app.layout = html.Div(
                     html.Hr(style={'margin': '2px'}),
                     html.Div(
                         id='output-abstract'
-                        # , style={'border': '2px solid #b78846'}
+                        , style={'text-align': 'justify', 'text-justify': 'inter-word'}
                     ),
                     html.Hr(style={'margin': '2px'}),
                     html.Div(
@@ -870,7 +870,6 @@ def showCountryRelation(n_click, n1_click, user_year, input1):
         return "data:image/png;base64,{}".format(data)
     else:
         return 'no'
-
 
 
 # @app.callback(
