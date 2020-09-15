@@ -16,6 +16,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from analysis_country import createGraph
+from analysis_author import createGraphAuthor
 
 conn = sqlite3.connect('temp.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -195,9 +196,7 @@ app.layout = html.Div(
         ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
 
         html.Div([
-            html.Img(id='output-country-relation-graph'
-                     , className='six columns'
-                     , style={'width': '50%', 'float': 'left'}
+            html.Img(id='output-relation-graph'
                      )
             # , html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
             #             , className='six columns'
@@ -843,19 +842,51 @@ def showAbstract(xxx, selected_row_ids):
 
 
 @app.callback(
-    Output('output-country-relation-graph', 'src'),
-    [Input('output-country-relation', 'n_clicks')],
+    Output('output-relation-graph', 'src'),
+    [Input('output-country-relation', 'n_clicks'),
+     Input('output-author-relation', 'n_clicks')],
     [State('year-slider', 'value'),
      State('input-1-state', 'value')]
 )
-def showCountryRelation(n_click, user_year, input1):
-    # create some matplotlib graph
-    c = createGraph(user_year, input1)
-    buf = io.BytesIO()  # in-memory files
-    plt.savefig(buf, format="png")  # save to the above file object
-    data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
-    plt.close()
-    return "data:image/png;base64,{}".format(data)
+def showCountryRelation(n_click, n1_click, user_year, input1):
+    user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+    callback_states = dash.callback_context.states.values()
+    callback_inputs = dash.callback_context.inputs.values()
+    if user_click == 'output-country-relation':
+        # create some matplotlib graph
+        c = createGraph(user_year, input1)
+        buf = io.BytesIO()  # in-memory files
+        plt.savefig(buf, format="png")  # save to the above file object
+        data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
+        plt.close()
+        return "data:image/png;base64,{}".format(data)
+    elif user_click == 'output-author-relation':
+        # create some matplotlib graph
+        c = createGraphAuthor(user_year, input1)
+        buf = io.BytesIO()  # in-memory files
+        plt.savefig(buf, format="png")  # save to the above file object
+        data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
+        plt.close()
+        return "data:image/png;base64,{}".format(data)
+    else:
+        return 'no'
+
+
+
+# @app.callback(
+#     Output('output-relation-graph', 'src'),
+#     [Input('output-author-relation', 'n_clicks')],
+#     [State('year-slider', 'value'),
+#      State('input-1-state', 'value')]
+# )
+# def showCountryRelation(n_click, user_year, input1):
+#     # create some matplotlib graph
+#     c = createGraphAuthor(user_year, input1)
+#     buf = io.BytesIO()  # in-memory files
+#     plt.savefig(buf, format="png")  # save to the above file object
+#     data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
+#     plt.close()
+#     return "data:image/png;base64,{}".format(data)
 
 
 if __name__ == '__main__':
