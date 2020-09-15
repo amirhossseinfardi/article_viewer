@@ -8,6 +8,14 @@ import pandas as pd
 from dash.dependencies import Input, Output, State
 import dash_table
 import os
+import numpy as np
+import io
+import base64
+import matplotlib
+
+matplotlib.use('Agg')
+from matplotlib import pyplot as plt
+from analysis_country import createGraph
 
 conn = sqlite3.connect('temp.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -167,11 +175,37 @@ app.layout = html.Div(
             html.Div(id='output-author',
                      className='six columns',
                      style={'width': '50%', 'float': 'left', 'border': '2px solid #73AD21'}),
+
             html.Div(id='output-country',
                      className='six columns',
                      style={'margin-left': '10%', 'border': '2px solid #73AD21'})
 
+        ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
+
+        html.Div([
+            html.Button('Show Country Relation', id='output-country-relation', n_clicks=0
+                        , className='six columns'
+                        , style={'width': '50%', 'float': 'left'}
+                        ),
+            html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
+                        , className='six columns'
+                        , style={'margin-left': '10%'}
+                        )
+
+        ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
+
+        html.Div([
+            html.Img(id='output-country-relation-graph'
+                     , className='six columns'
+                     , style={'width': '50%', 'float': 'left'}
+                     )
+            # , html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
+            #             , className='six columns'
+            #             , style={'margin-left': '10%'}
+            #             )
+
         ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'})
+
     ])
 
 
@@ -516,7 +550,6 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                     '''
             df_sql_keyword = df_sql_keyword.append(pd.read_sql_query(keyword_sql, conn))
 
-
         print(df_sql_article)
         df_sql_article = df_sql_article.reset_index(drop=True)
         output = dash_table.DataTable(
@@ -809,24 +842,20 @@ def showAbstract(xxx, selected_row_ids):
     return output1, output2, output3, output4, output5, output6, output7
 
 
-# @app.callback(
-#     Output('hidden-div', 'children'),
-#     [Input('get-paper', 'n_clicks')]
-# )
-# def getPaper(n_click):
-#     # temo = r'C:\Python.pdf'
-#     # paper_name = share_name
-#     # # get the name and address of graph pdf
-#     # file_list = []
-#     # root = r'C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\tems'
-#     # for path, subdirs, files in os.walk(root):
-#     #     for name in files:
-#     #         if paper_name in name:
-#     #             file_list.append(os.path.join(path, name))
-#     #             print(os.path.join(path, name))
-#     # print('--------------')
-#     # output = file_list[0]
-#     return 'xxx'
+@app.callback(
+    Output('output-country-relation-graph', 'src'),
+    [Input('output-country-relation', 'n_clicks')],
+    [State('year-slider', 'value'),
+     State('input-1-state', 'value')]
+)
+def showCountryRelation(n_click, user_year, input1):
+    # create some matplotlib graph
+    c = createGraph(user_year, input1)
+    buf = io.BytesIO()  # in-memory files
+    plt.savefig(buf, format="png")  # save to the above file object
+    data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
+    plt.close()
+    return "data:image/png;base64,{}".format(data)
 
 
 if __name__ == '__main__':
