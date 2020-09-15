@@ -17,6 +17,7 @@ matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 from analysis_country import createGraph
 from analysis_author import createGraphAuthor
+from analysis_keyword import createWordcloud
 
 conn = sqlite3.connect('temp.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -191,6 +192,10 @@ app.layout = html.Div(
             html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
                         , className='six columns'
                         , style={'margin-left': '10%'}
+                        ),
+            html.Button('Show Wordcloud', id='output-wordcloud-relation', n_clicks=0
+                        , className='six columns'
+                        , style={'margin-left': '10%'}
                         )
 
         ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
@@ -349,7 +354,8 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     df_key = df_key.keyword.value_counts().rename_axis('keyword').reset_index(name='counts')
     global df_key_share
     df_key_share = df_key
-
+    print('*************************')
+    print(df_key_share)
     # merge same country
     dict_country = {'the Netherlands': 'Netherlands',
                     'The Netherlands': 'Netherlands',
@@ -844,11 +850,12 @@ def showAbstract(xxx, selected_row_ids):
 @app.callback(
     Output('output-relation-graph', 'src'),
     [Input('output-country-relation', 'n_clicks'),
-     Input('output-author-relation', 'n_clicks')],
+     Input('output-author-relation', 'n_clicks'),
+     Input('output-wordcloud-relation', 'n_clicks')],
     [State('year-slider', 'value'),
      State('input-1-state', 'value')]
 )
-def showCountryRelation(n_click, n1_click, user_year, input1):
+def showCountryRelation(n_click, n1_click, n2_click, user_year, input1):
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
     callback_states = dash.callback_context.states.values()
     callback_inputs = dash.callback_context.inputs.values()
@@ -867,6 +874,15 @@ def showCountryRelation(n_click, n1_click, user_year, input1):
         plt.savefig(buf, format="png")  # save to the above file object
         data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
         plt.close()
+        return "data:image/png;base64,{}".format(data)
+    elif user_click == 'output-wordcloud-relation':
+        print('++++++++++++++++++')
+        keyword_wordcloud = df_key_share
+        pllt = createWordcloud(keyword_wordcloud)
+        buf = io.BytesIO()  # in-memory files
+        pllt.savefig(buf, format="png")  # save to the above file object
+        data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
+        pllt.close()
         return "data:image/png;base64,{}".format(data)
     else:
         return 'no'
