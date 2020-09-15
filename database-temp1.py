@@ -531,7 +531,6 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
         )
 
         df_list_keyword = df_sql_keyword['keyword'].tolist()
-        print(df_list_keyword)
         keyword_string = ', '.join(df_list_keyword)
         output1 = keyword_string
     return output, output1
