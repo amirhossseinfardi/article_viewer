@@ -796,6 +796,37 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
             """
         for row in cursor.execute(sql_jn):
             jn = str(row[0])
+
+            # prepare sqlite
+            if not selected_country_dropdown or selected_country_dropdown[0] == '*':
+                selected_country_dropdown_list = '*'
+                sql_selected_country_dropdown = ''
+            elif len(selected_country_dropdown) == 1:
+                selected_country_dropdown_list = selected_country_dropdown[0]
+                sql_selected_country_dropdown = '''
+                                    AND
+                                    paper_id IN (SELECT paper_id
+                                    FROM {temp_paper_country_list}
+                                    WHERE country_id IN ( SELECT country_id
+                                    FROM country_list
+                                    WHERE country_name = '{temp_country}'
+                                    ))
+                                    '''.format(temp_country=selected_country_dropdown[0],
+                                               temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
+                print('len is zero')
+            else:
+                selected_country_dropdown_list = selected_country_dropdown
+                sql_selected_country_dropdown = '''
+                                    AND
+                                    paper_id IN (SELECT paper_id
+                                    FROM {temp_paper_country_list}
+                                    WHERE country_id IN ( SELECT country_id
+                                    FROM country_list
+                                    WHERE country_name IN {temp_country}
+                                    ))
+                                    '''.format(temp_country=str(tuple(selected_country_dropdown_list)),
+                                               temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
+                # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
             # select id of each author based on different journal name
             sql_author = """
                      SELECT author_id
@@ -818,12 +849,14 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
                      FROM year_list
                      WHERE year IN {temp_year}
                      ))
+                     {temp_country}
                      ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
                                  temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                                  user_search_temp=input1,
                                  temp_year=str(tuple(year_list)),
                                  temp_key_jn='paper_keyword_' + jn.replace(" ", "_"),
-                                 selected_search_temp=selected_search)
+                                 selected_search_temp=selected_search,
+                                 temp_country=sql_selected_country_dropdown)
             df3 = pd.read_sql_query(sql_author, conn)
 
             # loop through author ID cause we need all author
