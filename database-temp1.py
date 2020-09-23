@@ -29,6 +29,25 @@ from year_list
 '''
 df_years = pd.read_sql_query(sql_year, conn)
 
+# get country list for dropdown menu
+sql_country = '''
+SELECT country_name
+from country_list
+'''
+df_country_dropdown = pd.read_sql_query(sql_country, conn)
+country_dropdown_list = []
+temp_dic = {
+    'label': 'All Country',
+    'value': '*'
+}
+country_dropdown_list.append(temp_dic)
+for i, rows in df_country_dropdown.iterrows():
+    temp_dic = {
+        'label': rows.country_name,
+        'value': rows.country_name
+    }
+    country_dropdown_list.append(temp_dic)
+
 # get number of paper
 # sqlite read data counting
 countPaper = 0
@@ -67,9 +86,17 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_ca
 
 app.layout = html.Div(
     children=[
-        dcc.Input(id='input-1-state', type='text', value='CFD'),
-        html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
         html.H4(children='Search in SamenPayesh database'),
+        dcc.Input(id='input-1-state', type='text', value='CFD'),
+        html.Div([
+            dcc.Dropdown(
+                id='country_dropdown_menu',
+                options=country_dropdown_list,
+                value=[],
+                multi=True
+            )
+        ]),
+        html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
         html.H5(children=couting_output),
         html.H5(children='Paper Dates', style={'margin-top': '30px'}),
         html.Div([
@@ -241,13 +268,39 @@ app.layout = html.Div(
                ],
               [Input('submit-button-state', 'n_clicks')],
               [State('input-1-state', 'value'),
-               State('year-slider', 'value')]
+               State('year-slider', 'value'),
+               State('country_dropdown_menu', 'value')]
               )
-def generate_table(n_clicks, input1, user_year, max_rows=10):
+def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_rows=10):
     # sqlite read
     year_list = list(range(user_year[0], user_year[1] + 1, 1))
     if len(year_list) == 1:
         year_list.append(year_list[0])
+
+    # if not selected_country_dropdown or selected_country_dropdown[0] == '*':
+    #     selected_country_dropdown_list = '*'
+    #     sql_selected_country_dropdown = ''
+    # elif len(selected_country_dropdown) == 1:
+    #     selected_country_dropdown_list = selected_country_dropdown[0]
+    #     sql_selected_country_dropdown = '''
+    #     AND
+    #     country_id IN ( SELECT country_id
+    #     FROM country_list
+    #     WHERE country_name = '{temp_country}'
+    #     )
+    #     '''.format(temp_country=selected_country_dropdown[0])
+    #     print('len is zero')
+    # else:
+    #     selected_country_dropdown_list = selected_country_dropdown
+    #     sql_selected_country_dropdown = '''
+    #     AND
+    #     country_id IN ( SELECT country_id
+    #     FROM country_list
+    #     WHERE country_name IN {temp_country}
+    #     )
+    #     '''.format(temp_country=str(tuple(selected_country_dropdown_list)))
+        # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
+
     keylist = []
     country_list = []
     df_key = pd.DataFrame(columns=['keyword'])
@@ -262,6 +315,38 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
     for row in cursor.execute(sql_jn):
         jn = str(row[0])
         print(jn)
+
+        # prepare sqlite
+        if not selected_country_dropdown or selected_country_dropdown[0] == '*':
+            selected_country_dropdown_list = '*'
+            sql_selected_country_dropdown = ''
+        elif len(selected_country_dropdown) == 1:
+            selected_country_dropdown_list = selected_country_dropdown[0]
+            sql_selected_country_dropdown = '''
+            AND
+            paper_id IN (SELECT paper_id
+            FROM {temp_paper_country_list}
+            WHERE country_id IN ( SELECT country_id
+            FROM country_list
+            WHERE country_name = '{temp_country}'
+            ))
+            '''.format(temp_country=selected_country_dropdown[0],
+                       temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
+            print('len is zero')
+        else:
+            selected_country_dropdown_list = selected_country_dropdown
+            sql_selected_country_dropdown = '''
+            AND
+            paper_id IN (SELECT paper_id
+            FROM {temp_paper_country_list}
+            WHERE country_id IN ( SELECT country_id
+            FROM country_list
+            WHERE country_name IN {temp_country}
+            ))
+            '''.format(temp_country=str(tuple(selected_country_dropdown_list)),
+                       temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
+            # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
+
         # select id of each keyword based on different journal name
         sql_final = """
          SELECT keyword_id
@@ -277,10 +362,12 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
          FROM year_list
          WHERE year IN {temp_year}
          ))
+         {temp_country}
          ;""".format(temp_jn='paper_keyword_' + jn.replace(" ", "_"),
                      temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                      user_search_temp=input1,
-                     temp_year=str(tuple(year_list)))
+                     temp_year=str(tuple(year_list)),
+                     temp_country=sql_selected_country_dropdown)
 
         df2 = pd.read_sql_query(sql_final, conn)
         # get keyword name of each id. loop for select duplicate keyword
@@ -308,10 +395,12 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
          FROM year_list
          WHERE year IN {temp_year}
          ))
+         {temp_country}
         ;""".format(
             temp_paper_list='paper_list_' + jn.replace(" ", "_"),
             user_search_temp=input1,
-            temp_year=str(tuple(year_list))
+            temp_year=str(tuple(year_list)),
+            temp_country=sql_selected_country_dropdown
         )
         df_full_sql_doi = df_full_sql_doi.append(pd.read_sql_query(sql_doi, conn))
 
@@ -330,10 +419,13 @@ def generate_table(n_clicks, input1, user_year, max_rows=10):
                  FROM year_list
                  WHERE year IN {temp_year}
                  ))
+                 {temp_country}
                  ;""".format(temp_jn='paper_country_' + jn.replace(" ", "_"),
                              temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                              user_search_temp=input1,
-                             temp_year=str(tuple(year_list)))
+                             temp_year=str(tuple(year_list)),
+                             temp_country=sql_selected_country_dropdown)
+        print(sql_country)
         df4 = pd.read_sql_query(sql_country, conn)
         for nnn in df4['country_id']:
             # get country name
@@ -582,8 +674,9 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                Input('keyword-button-state', 'n_clicks'),
                Input('datatable-temp', 'derived_virtual_selected_rows')],
               [State('year-slider', 'value'),
-               State('input-1-state', 'value')])
-def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
+               State('input-1-state', 'value'),
+               State('country_dropdown_menu', 'value')])
+def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, selected_country_dropdown):
     # update year list -----------------
     year_list = list(range(user_year[0], user_year[1] + 1, 1))
     if len(year_list) == 1:
@@ -606,6 +699,38 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
             """
         for row in cursor.execute(sql_jn):
             jn = str(row[0])
+
+            # prepare sqlite
+            if not selected_country_dropdown or selected_country_dropdown[0] == '*':
+                selected_country_dropdown_list = '*'
+                sql_selected_country_dropdown = ''
+            elif len(selected_country_dropdown) == 1:
+                selected_country_dropdown_list = selected_country_dropdown[0]
+                sql_selected_country_dropdown = '''
+                        AND
+                        paper_id IN (SELECT paper_id
+                        FROM {temp_paper_country_list}
+                        WHERE country_id IN ( SELECT country_id
+                        FROM country_list
+                        WHERE country_name = '{temp_country}'
+                        ))
+                        '''.format(temp_country=selected_country_dropdown[0],
+                                   temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
+                print('len is zero')
+            else:
+                selected_country_dropdown_list = selected_country_dropdown
+                sql_selected_country_dropdown = '''
+                        AND
+                        paper_id IN (SELECT paper_id
+                        FROM {temp_paper_country_list}
+                        WHERE country_id IN ( SELECT country_id
+                        FROM country_list
+                        WHERE country_name IN {temp_country}
+                        ))
+                        '''.format(temp_country=str(tuple(selected_country_dropdown_list)),
+                                   temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
+                # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
+
             # select id of each author based on different journal name
             sql_author = """
                      SELECT author_id
@@ -621,10 +746,12 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1):
                      FROM year_list
                      WHERE year IN {temp_year}
                      ))
+                     {temp_country}
                      ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
                                  temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                                  user_search_temp=input1,
-                                 temp_year=str(tuple(year_list)))
+                                 temp_year=str(tuple(year_list)),
+                                 temp_country=sql_selected_country_dropdown)
             df3 = pd.read_sql_query(sql_author, conn)
             # loop through author ID cause i need duplicated one
             for mmm in df3['author_id']:
@@ -855,7 +982,7 @@ def showAbstract(xxx, selected_row_ids):
     [State('year-slider', 'value'),
      State('input-1-state', 'value')]
 )
-def showCountryRelation(n_click, n1_click, n2_click, user_year, input1):
+def showRelation(n_click, n1_click, n2_click, user_year, input1):
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
     callback_states = dash.callback_context.states.values()
     callback_inputs = dash.callback_context.inputs.values()
