@@ -111,7 +111,7 @@ app.layout = html.Div(
             ),
             html.Div(id='output-container-range-slider')
         ]),
-
+        html.H5(id='result_count', style={'margin-top': '20px'}),
         html.Div(
             html.Div([
                 html.Div([
@@ -264,7 +264,8 @@ app.layout = html.Div(
                Output('datatable-temp', 'data'),
                Output('datatable-temp', 'columns'),
                # Output('keyword-list', 'children'),
-               Output('output-country', 'children')
+               Output('output-country', 'children'),
+               Output('result_count', 'children')
                ],
               [Input('submit-button-state', 'n_clicks')],
               [State('input-1-state', 'value'),
@@ -299,7 +300,7 @@ def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_r
     #     WHERE country_name IN {temp_country}
     #     )
     #     '''.format(temp_country=str(tuple(selected_country_dropdown_list)))
-        # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
+    # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
 
     keylist = []
     country_list = []
@@ -528,7 +529,7 @@ def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_r
     df_sql_doi = df_full_sql_doi.drop(['paper_doi', 'paper_abstract'], 1)
     output1_data = df_sql_doi.to_dict('records')
     output1_column = [{'id': c, 'name': c} for c in df_sql_doi.columns]
-
+    output5 = 'result number is : ' + str(len(df_sql_doi.index))
     output4 = dash_table.DataTable(
         data=df_countr.to_dict('records'),
         columns=[{'id': c, 'name': c} for c in df_countr.columns],
@@ -540,7 +541,7 @@ def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_r
         }
     )
 
-    return output1_data, output1_column, [], output2_data, output2_column, output4
+    return output1_data, output1_column, [], output2_data, output2_column, output4, output5
 
 
 @app.callback([Output('output-density-article', 'children'),
