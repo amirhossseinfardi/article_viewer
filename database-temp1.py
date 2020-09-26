@@ -29,7 +29,7 @@ from year_list
 '''
 df_years = pd.read_sql_query(sql_year, conn)
 
-# get country list for dropdown menu
+# ------------------ get country list for dropdown menu
 sql_country = '''
 SELECT country_name
 from country_list
@@ -48,7 +48,26 @@ for i, rows in df_country_dropdown.iterrows():
     }
     country_dropdown_list.append(temp_dic)
 
-# get number of paper
+# --------------   get list of journal
+all_journal_list = []
+sql_jn = """
+    SELECT journal_name
+    FROM journal_list
+    """
+df_all_journal = pd.read_sql_query(sql_jn, conn)
+temp_dic = {
+    'label': 'All Journal',
+    'value': '*'
+}
+all_journal_list.append(temp_dic)
+for i, rows in df_all_journal.iterrows():
+    temp_dic = {
+        'label': rows.journal_name,
+        'value': rows.journal_name
+    }
+    all_journal_list.append(temp_dic)
+
+# --------------- get number of paper
 # sqlite read data counting
 countPaper = 0
 sql_jn = """
@@ -92,6 +111,14 @@ app.layout = html.Div(
             dcc.Dropdown(
                 id='country_dropdown_menu',
                 options=country_dropdown_list,
+                value=[],
+                multi=True
+            )
+        ]),
+        html.Div([
+            dcc.Dropdown(
+                id='journal_dropdown_menu',
+                options=all_journal_list,
                 value=[],
                 multi=True
             )
@@ -270,10 +297,19 @@ app.layout = html.Div(
               [Input('submit-button-state', 'n_clicks')],
               [State('input-1-state', 'value'),
                State('year-slider', 'value'),
-               State('country_dropdown_menu', 'value')]
+               State('country_dropdown_menu', 'value'),
+               State('journal_dropdown_menu', 'value')]
               )
-def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_rows=10):
-    # sqlite read
+def generate_table(n_clicks, input1, user_year, selected_country_dropdown, selected_journal_dropdown, max_rows=10):
+    # ------------------  select journal
+    if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
+        selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
+        # print('---------->>>>>>>>>', selected_journal)
+    else:
+        selected_journal = selected_journal_dropdown
+        # print(selected_journal)
+
+    # ------------------ select year
     year_list = list(range(user_year[0], user_year[1] + 1, 1))
     if len(year_list) == 1:
         year_list.append(year_list[0])
@@ -309,12 +345,13 @@ def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_r
     df_sql_doi = pd.DataFrame()
     df_full_sql_doi = pd.DataFrame()
     # get journal name available in database
-    sql_jn = """
-    SELECT journal_name
-    FROM journal_list
-    """
-    for row in cursor.execute(sql_jn):
-        jn = str(row[0])
+    # sql_jn = """
+    # SELECT journal_name
+    # FROM journal_list
+    # """
+    # for row in cursor.execute(sql_jn):
+    for row in selected_journal:
+        jn = row
         print(jn)
 
         # prepare sqlite
