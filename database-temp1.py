@@ -552,8 +552,16 @@ def generate_table(n_clicks, input1, user_year, selected_country_dropdown, max_r
                Input('datatable-temp', 'derived_virtual_selected_rows')],
               [State('year-slider', 'value'),
                # State('output-density-article', 'selected_row_ids'),
-               State('input-1-state', 'value')])
-def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
+               State('input-1-state', 'value'),
+               State('journal_dropdown_menu', 'value')])
+def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_journal_dropdown):
+    # ------------------  select journal
+    if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
+        selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
+        # print('---------->>>>>>>>>', selected_journal)
+    else:
+        selected_journal = selected_journal_dropdown
+        # print(selected_journal)
     # selected_id_set = set(selected_row_ids or [])
     print(selected_row_ids)
     df_sql_article = pd.DataFrame()
@@ -577,12 +585,8 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
         if len(year_list) == 1:
             year_list.append(year_list[0])
 
-        sql_jn = """
-            SELECT journal_name
-            FROM journal_list
-            """
-        for row in cursor.execute(sql_jn):
-            jn = str(row[0])
+        for row in selected_journal:
+            jn = row
             # select id of each paper based on different journal name
             sql_final = """
             SELECT paper_doi, paper_name
@@ -676,8 +680,17 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1):
                Input('datatable-temp', 'derived_virtual_selected_rows')],
               [State('year-slider', 'value'),
                State('input-1-state', 'value'),
-               State('country_dropdown_menu', 'value')])
-def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, selected_country_dropdown):
+               State('country_dropdown_menu', 'value'),
+               State('journal_dropdown_menu', 'value')])
+def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, selected_country_dropdown,
+                          selected_journal_dropdown):
+    # ------------------  select journal
+    if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
+        selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
+        # print('---------->>>>>>>>>', selected_journal)
+    else:
+        selected_journal = selected_journal_dropdown
+        # print(selected_journal)
     # update year list -----------------
     year_list = list(range(user_year[0], user_year[1] + 1, 1))
     if len(year_list) == 1:
@@ -694,12 +707,8 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
     if selected_row_ids is None or len(selected_row_ids) == 0:
         # get all author based on search
         # get journal name available in database
-        sql_jn = """
-            SELECT journal_name
-            FROM journal_list
-            """
-        for row in cursor.execute(sql_jn):
-            jn = str(row[0])
+        for row in selected_journal:
+            jn = row
 
             # prepare sqlite
             if not selected_country_dropdown or selected_country_dropdown[0] == '*':
@@ -791,12 +800,8 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
             year_list.append(year_list[0])
         # year updated
         # get author
-        sql_jn = """
-            SELECT journal_name
-            FROM journal_list
-            """
-        for row in cursor.execute(sql_jn):
-            jn = str(row[0])
+        for row in selected_journal:
+            jn = row
 
             # prepare sqlite
             if not selected_country_dropdown or selected_country_dropdown[0] == '*':
@@ -900,8 +905,18 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
                ],
               [Input('output-table', 'derived_virtual_row_ids'),
                Input('output-table', 'derived_virtual_selected_rows')],
-              )
-def showAbstract(xxx, selected_row_ids):
+              [
+                  State('journal_dropdown_menu', 'value')
+              ])
+def showAbstract(xxx, selected_row_ids, selected_journal_dropdown):
+    # ------------------  select journal
+    if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
+        selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
+        # print('---------->>>>>>>>>', selected_journal)
+    else:
+        selected_journal = selected_journal_dropdown
+        # print(selected_journal)
+
     if selected_row_ids is None or len(selected_row_ids) == 0:
         output1 = ' Nothing selected.\n ' \
                   'select paper to show abstract'
@@ -920,12 +935,8 @@ def showAbstract(xxx, selected_row_ids):
         global share_name
         share_name = paper_name
         author_list = []
-        sql_jn = """
-            SELECT journal_name
-            FROM journal_list
-            """
-        for row in cursor.execute(sql_jn):
-            jn = str(row[0])
+        for row in selected_journal:
+            jn = row
             sql_id = '''
             SELECT paper_id
             FROM {temp_paper_list}
