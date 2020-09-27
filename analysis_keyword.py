@@ -4,12 +4,12 @@ import pandas as pd
 
 
 def createWordcloud(data):
-    text = data.keyword.values
+    # text = data.keyword.values
     wordcloud = WordCloud(
         width=3000,
         height=2000,
         background_color='black',
-        stopwords=STOPWORDS).generate(str(text))
+        stopwords=STOPWORDS).generate(' '.join(data['keyword']))
     fig = plt.figure(
         figsize=(40, 30),
         facecolor='k',
