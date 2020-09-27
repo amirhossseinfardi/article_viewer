@@ -102,7 +102,7 @@ df_key = pd.DataFrame()
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
-
+app.title = 'ثامن پایش'
 app.layout = html.Div(
     children=[
         html.H4(children='Search in SamenPayesh database'),
@@ -1111,7 +1111,6 @@ def showRelation(n_click, n1_click, n2_click, user_year, input1):
 #     data = base64.b64encode(buf.getbuffer()).decode("utf8")  # encode to html elements
 #     plt.close()
 #     return "data:image/png;base64,{}".format(data)
-
 
 if __name__ == '__main__':
     os.system(r"C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\Run.bat")
