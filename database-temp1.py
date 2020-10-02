@@ -163,7 +163,9 @@ app.layout = html.Div(
                             #  'maxWidth': 0}
                         ],
                         row_selectable="multi",
-                        selected_rows=[]
+                        selected_rows=[],
+                        export_columns='all',
+                        export_format='xlsx'
                     )
 
                 ], className="eight columns",
@@ -217,7 +219,9 @@ app.layout = html.Div(
                 style_header={
                     'backgroundColor': 'rgb(230, 230, 230)',
                     'fontWeight': 'bold'
-                }
+                },
+                export_columns='all',
+                export_format='xlsx'
             )
 
         ], style={'margin-top': '30px'}),
