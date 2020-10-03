@@ -99,7 +99,7 @@ couting_output = 'Total number of paper in database is: ' + str(countPaper)
 #     ])
 df_key = pd.DataFrame()
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 app.title = 'ثامن پایش'
