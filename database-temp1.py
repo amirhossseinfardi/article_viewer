@@ -229,8 +229,72 @@ app.layout = html.Div(
                     style={'background-color': '#44c767'}),
         html.Div(id='keyword-list',
                  style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
-        html.Div(id='output-density-article',
-                 style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
+        # html.Div(id='output-density-article',
+        #          style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
+
+        html.Div(
+            html.Div([
+                html.Div([
+                    # html.Div(id='output-table')
+                    dash_table.DataTable(
+                        id='output-density-article',
+                        # data=df_sql_doi.to_dict('records'),
+                        # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+                        page_size=10,
+                        style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal',
+                                    'height': 'auto'},
+                        style_header={
+                            'backgroundColor': 'rgb(230, 230, 230)',
+                            'fontWeight': 'bold'
+                        },
+                        style_cell_conditional=[
+                            {'if': {'column_id': 'paper_doi'},
+                             'width': '20%'}
+                            # {'if': {'column_id': 'paper_doi'},
+                            #  'overflow': 'hidden',
+                            #  'textOverflow': 'ellipsis',
+                            #  'maxWidth': 0}
+                        ],
+                        row_selectable="multi",
+                        selected_rows=[]
+                    )
+
+                ], className="eight columns",
+                    style={'border': '2px solid #73AD21'}),
+
+                html.Div([
+                    html.Div(id='f-output-name', style={'font-weight': 'bold'}),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(id='f-abstract-output-author', style={'font-style': 'italic'}),
+                    html.Hr(style={'margin': '2px'}),
+
+                    html.Div(id='f-output-date'),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(id='f-abstract-output-country'),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(
+                        id='f-output-abstract'
+                        , style={'text-align': 'justify', 'text-justify': 'inter-word'}
+                    ),
+                    html.Hr(style={'margin': '2px'}),
+                    html.Div(
+                        id='f-output-doi'
+                        # , style={'border': '2px solid #b78846'}
+                    ),
+                    html.Hr(style={'margin': '2px'}),
+                    html.A(id='f-link-paper', children=[
+                        html.Button('Get Paper', id='f-get-paper', n_clicks=0, style={'background-color': '#44c767'}),
+                    ],
+                           # href='www.google.com',
+                           target="_blank",
+                           # download=''
+                           )
+                ]
+                    , className="four columns"),
+            ],
+                style={'margin-top': '30px'}),
+            className='row'),
+
         html.Div([
             html.Div(id='output-author',
                      className='six columns',
@@ -585,7 +649,8 @@ def generate_table(n_clicks, input1, user_year, selected_country_dropdown, selec
     return output1_data, output1_column, [], output2_data, output2_column, output4, output5
 
 
-@app.callback([Output('output-density-article', 'children'),
+@app.callback([Output('output-density-article', 'data'),
+               Output('output-density-article', 'columns'),
                Output('keyword-list', 'children')
                ],
               [Input('datatable-temp', 'derived_virtual_row_ids'),
@@ -609,7 +674,8 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
     df_sql_keyword = pd.DataFrame()
     if selected_row_ids is None or len(selected_row_ids) == 0:
         # dff = df
-        output = ' nothing is selected '
+        output_data = []
+        output_column = []
         output1 = ' no keyword selected '
         print('i am in none')
         # pandas Series works enough like a list for this to be OK
@@ -630,7 +696,7 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
             jn = row
             # select id of each paper based on different journal name
             sql_final = """
-            SELECT paper_doi, paper_name
+            SELECT paper_doi, paper_name, paper_abstract
             FROM {temp_paper_list}
             WHERE paper_id IN (SELECT paper_id
             FROM {temp_paper_list}
@@ -694,22 +760,30 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
             df_sql_keyword = df_sql_keyword.append(pd.read_sql_query(keyword_sql, conn))
 
         print(df_sql_article)
+        global f_share_df_sql_article
         df_sql_article = df_sql_article.reset_index(drop=True)
-        output = dash_table.DataTable(
-            data=df_sql_article.to_dict('records'),
-            columns=[{'id': c, 'name': c} for c in df_sql_article.columns],
-            page_size=10,
-            style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
-            style_header={
-                'backgroundColor': 'rgb(230, 230, 230)',
-                'fontWeight': 'bold'
-            }
-        )
+        f_share_df_sql_article = df_sql_article
+        df_sql_article = df_sql_article.drop(['paper_doi', 'paper_abstract'], 1)
+        df_sql_article = df_sql_article.reset_index(drop=True)
+
+        output_data = df_sql_article.to_dict('records')
+        output_column = [{'id': c, 'name': c} for c in df_sql_article.columns]
+
+        # output = dash_table.DataTable(
+        #     data=df_sql_article.to_dict('records'),
+        #     columns=[{'id': c, 'name': c} for c in df_sql_article.columns],
+        #     page_size=10,
+        #     style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+        #     style_header={
+        #         'backgroundColor': 'rgb(230, 230, 230)',
+        #         'fontWeight': 'bold'
+        #     }
+        # )
 
         df_list_keyword = df_sql_keyword['keyword'].tolist()
         keyword_string = ', '.join(df_list_keyword)
         output1 = keyword_string
-    return output, output1
+    return output_data, output_column, output1
 
 
 # update author table that variable by keyword selection
@@ -1046,6 +1120,131 @@ def showAbstract(xxx, selected_row_ids, selected_journal_dropdown):
         # show doi
         output2 = dcc.Textarea(
             id='textarea-state-doi',
+            value=doi,
+            style={'width': '100%', 'height': 20}
+        )
+        # paper name
+        output3 = paper_name
+        # get author list
+        output4 = ', '.join(pd.read_sql_query(sql_author, conn)['author_name'].tolist())
+        # get year of paper
+        output5 = pd.read_sql_query(sql_year, conn).iat[0, 0]
+        # paper country
+        output6 = ', '.join(pd.read_sql_query(sql_country, conn)['country_name'].tolist())
+    return output1, output2, output3, output4, output5, output6, output7
+
+
+# show filtered paper detail after selecting
+@app.callback([Output('f-output-abstract', 'children'),
+               Output('f-output-doi', 'children'),
+               Output('f-output-name', 'children'),
+               Output('f-abstract-output-author', 'children'),
+               Output('f-output-date', 'children'),
+               Output('f-abstract-output-country', 'children'),
+               Output('f-link-paper', 'href')
+               ],
+              [Input('output-density-article', 'derived_virtual_row_ids'),
+               Input('output-density-article', 'derived_virtual_selected_rows')],
+              [
+                  State('journal_dropdown_menu', 'value')
+              ])
+def showAbstract1(xxx, selected_row_ids, selected_journal_dropdown):
+    # ------------------  select journal
+    if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
+        selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
+        # print('---------->>>>>>>>>', selected_journal)
+    else:
+        selected_journal = selected_journal_dropdown
+        # print(selected_journal)
+
+    if selected_row_ids is None or len(selected_row_ids) == 0:
+        output1 = ' Nothing selected.\n ' \
+                  'select paper to show abstract'
+        output2 = 'Nothing selected'
+        output3 = 'Nothing selected'
+        output4 = 'Nothing selected'
+        output5 = 'Nothing selected'
+        output6 = 'Nothing selected'
+        output7 = ''
+    else:
+        df = f_share_df_sql_article
+        abstract = df.loc[selected_row_ids[0]]['paper_abstract']
+        print(abstract)
+        doi = df.loc[selected_row_ids[0]]['paper_doi']
+        paper_name = df.loc[selected_row_ids[0]]['paper_name']
+        # global share_name
+        # share_name = paper_name
+        author_list = []
+        for row in selected_journal:
+            jn = row
+            sql_id = '''
+            SELECT paper_id
+            FROM {temp_paper_list}
+            WHERE paper_name LIKE '%{name_temp}%'
+            '''.format(
+                temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                name_temp=paper_name
+            )
+            x_check = pd.read_sql_query(sql_id, conn)
+            if not x_check.empty:
+                print(x_check)
+                paper_id = x_check.iat[0, 0]
+                journal_name = jn.replace(" ", "_")
+        sql_author = '''
+        SELECT author_list.author_name
+        FROM author_list
+        INNER JOIN {temp_list} ON
+        {temp_list}.author_id = author_list.author_id
+        WHERE {temp_list}.paper_id = {temp_id}
+        '''.format(
+            temp_id=paper_id,
+            temp_list='paper_author_' + journal_name
+        )
+        sql_country = '''
+        SELECT country_list.country_name
+        FROM country_list
+        WHERE country_id in (
+        SELECT country_id
+        FROM {temp_list}
+        WHERE {temp_list}.paper_id = {temp_id}
+        )
+        '''.format(
+            temp_id=paper_id,
+            temp_list='paper_country_' + journal_name
+        )
+        sql_year = '''
+        SELECT year
+        FROM year_list
+        WHERE year_id = (
+        SELECT paper_year
+        FROM {temp_list}
+        WHERE paper_id = {temp_id}
+        )
+        '''.format(temp_list='paper_list_' + journal_name,
+                   temp_id=paper_id)
+        #
+        # generate download paper link
+        try:
+            file_list = []
+            root = r'C:\Users\M.Yaghoobi\PycharmProjects\Project\Dashboard\article_viewer\tems'
+            for path, subdirs, files in os.walk(root):
+                for name in files:
+                    if paper_name in name:
+                        file_list.append(os.path.join(path, name))
+                        print(os.path.join(path, name))
+            print('--------------')
+            output7 = file_list[0]
+        except:
+            output7 = ''
+        # show abstract
+        output1 = dcc.Textarea(
+            id='f-textarea-state-abstract',
+            value=abstract,
+            style={'width': '100%', 'height': 400}
+        )
+        # show doi
+        output2 = dcc.Textarea(
+            id='f-textarea-state-doi',
             value=doi,
             style={'width': '100%', 'height': 20}
         )
