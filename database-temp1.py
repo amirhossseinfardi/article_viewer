@@ -104,235 +104,240 @@ external_stylesheets = ['bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_callback_exceptions=True)
 app.title = 'ثامن پایش'
 app.layout = html.Div(
-    children=[
-        html.H4(children='Search in SamenPayesh database'),
-        dcc.Input(id='input-1-state', type='text', value='CFD'),
-        html.Div([
-            dcc.Dropdown(
-                id='country_dropdown_menu',
-                options=country_dropdown_list,
-                value=[],
-                multi=True
-            )
-        ]),
-        html.Div([
-            dcc.Dropdown(
-                id='journal_dropdown_menu',
-                options=all_journal_list,
-                value=[],
-                multi=True
-            )
-        ]),
-        html.Button(id='submit-button-state', n_clicks=0, children='Search', style={'background-color': '#44c767'}),
-        html.H5(children=couting_output),
-        html.H5(children='Paper Dates', style={'margin-top': '30px'}),
-        html.Div([
-            dcc.RangeSlider(
-                id='year-slider',
-                min=int(df_years['year'].min()),
-                max=int(df_years['year'].max()),
-                step=1,
-                value=[2017, 2020],
-                allowCross=False,
-                marks={str(year): str(year) for year in df_years['year'].unique()}
-            ),
-            html.Div(id='output-container-range-slider')
-        ]),
-        html.H5(id='result_count', style={'margin-top': '20px'}),
-        html.Div(
-            html.Div([
-                html.Div([
-                    # html.Div(id='output-table')
-                    dash_table.DataTable(
-                        id='output-table',
-                        # data=df_sql_doi.to_dict('records'),
-                        # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
-                        page_size=10,
-                        style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal',
-                                    'height': 'auto'},
-                        style_header={
-                            'backgroundColor': 'rgb(230, 230, 230)',
-                            'fontWeight': 'bold'
-                        },
-                        style_cell_conditional=[
-                            {'if': {'column_id': 'paper_doi'},
-                             'width': '20%'}
-                            # {'if': {'column_id': 'paper_doi'},
-                            #  'overflow': 'hidden',
-                            #  'textOverflow': 'ellipsis',
-                            #  'maxWidth': 0}
-                        ],
-                        row_selectable="multi",
-                        selected_rows=[],
-                        export_columns='all',
-                        export_format='xlsx'
-                    )
+                      children=[
+                          html.H4(children='Search in SamenPayesh database'),
+                          dcc.Input(id='input-1-state', type='text', value='CFD'),
+                          html.H5(children='Select Country', style={'margin-top': '30px'}),
+                          html.Div([
+                              dcc.Dropdown(
+                                  id='country_dropdown_menu',
+                                  options=country_dropdown_list,
+                                  value=[],
+                                  multi=True
+                              )
+                          ]),
+                          html.H5(children='Select Journal', style={'margin-top': '30px'}),
+                          html.Div([
+                              dcc.Dropdown(
+                                  id='journal_dropdown_menu',
+                                  options=all_journal_list,
+                                  value=[],
+                                  multi=True
+                              )
+                          ]),
+                          html.Button(id='submit-button-state', n_clicks=0, children='Search',
+                                      style={'background-color': '#44c767'}),
+                          html.H5(children=couting_output),
+                          html.H5(children='Paper Dates', style={'margin-top': '30px'}),
+                          html.Div([
+                              dcc.RangeSlider(
+                                  id='year-slider',
+                                  min=int(df_years['year'].min()),
+                                  max=int(df_years['year'].max()),
+                                  step=1,
+                                  value=[2017, 2020],
+                                  allowCross=False,
+                                  marks={str(year): str(year) for year in df_years['year'].unique()}
+                              ),
+                              html.Div(id='output-container-range-slider')
+                          ]),
+                          html.H5(id='result_count', style={'margin-top': '20px'}),
+                          html.Div(
+                              html.Div([
+                                  html.Div([
+                                      # html.Div(id='output-table')
+                                      dash_table.DataTable(
+                                          id='output-table',
+                                          # data=df_sql_doi.to_dict('records'),
+                                          # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+                                          page_size=10,
+                                          style_cell={'textAlign': 'left', 'font-family': 'sans-serif',
+                                                      'whiteSpace': 'normal',
+                                                      'height': 'auto'},
+                                          style_header={
+                                              'backgroundColor': 'rgb(230, 230, 230)',
+                                              'fontWeight': 'bold'
+                                          },
+                                          style_cell_conditional=[
+                                              {'if': {'column_id': 'paper_doi'},
+                                               'width': '20%'}
+                                              # {'if': {'column_id': 'paper_doi'},
+                                              #  'overflow': 'hidden',
+                                              #  'textOverflow': 'ellipsis',
+                                              #  'maxWidth': 0}
+                                          ],
+                                          row_selectable="multi",
+                                          selected_rows=[],
+                                          export_columns='all',
+                                          export_format='xlsx'
+                                      )
 
-                ], className="eight columns",
-                    style={'border': '2px solid #73AD21'}),
+                                  ], className="eight columns",
+                                      style={'border': '2px solid #73AD21'}),
 
-                html.Div([
-                    html.Div(id='output-name', style={'font-weight': 'bold'}),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(id='abstract-output-author', style={'font-style': 'italic'}),
-                    html.Hr(style={'margin': '2px'}),
+                                  html.Div([
+                                      html.Div(id='output-name', style={'font-weight': 'bold'}),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(id='abstract-output-author', style={'font-style': 'italic'}),
+                                      html.Hr(style={'margin': '2px'}),
 
-                    html.Div(id='output-date'),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(id='abstract-output-country'),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(
-                        id='output-abstract'
-                        , style={'text-align': 'justify', 'text-justify': 'inter-word'}
-                    ),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(
-                        id='output-doi'
-                        # , style={'border': '2px solid #b78846'}
-                    ),
-                    html.Hr(style={'margin': '2px'}),
-                    html.A(id='link-paper', children=[
-                        html.Button('Get Paper', id='get-paper', n_clicks=0, style={'background-color': '#44c767'}),
-                    ],
-                           # href='www.google.com',
-                           target="_blank",
-                           # download=''
-                           )
-                ]
-                    , className="four columns"),
-            ],
-                style={'margin-top': '30px'}),
-            className='row'),
+                                      html.Div(id='output-date'),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(id='abstract-output-country'),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(
+                                          id='output-abstract'
+                                          , style={'text-align': 'justify', 'text-justify': 'inter-word'}
+                                      ),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(
+                                          id='output-doi'
+                                          # , style={'border': '2px solid #b78846'}
+                                      ),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.A(id='link-paper', children=[
+                                          html.Button('Get Paper', id='get-paper', n_clicks=0,
+                                                      style={'background-color': '#44c767'}),
+                                      ],
+                                             # href='www.google.com',
+                                             target="_blank",
+                                             # download=''
+                                             )
+                                  ]
+                                      , className="four columns"),
+                              ],
+                                  style={'margin-top': '30px'}),
+                              className='row'),
 
-        # html.Div(id='output-density',
-        #          style={'width': '500px', 'margin': 'auto', 'margin-top': '80px', 'textAlign': 'center',
-        #                 'border': '2px solid #73AD21'}),
-        html.Div([
-            dash_table.DataTable(
-                id='datatable-temp',
-                # data=df_key.to_dict('records'),
-                # columns=[{'id': c, 'name': c} for c in df_key.columns],
-                page_size=10,
-                row_selectable="multi",
-                selected_rows=[],
-                style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
-                style_header={
-                    'backgroundColor': 'rgb(230, 230, 230)',
-                    'fontWeight': 'bold'
-                },
-                export_columns='all',
-                export_format='xlsx'
-            )
 
-        ], style={'margin-top': '30px'}),
-        html.Button(id='keyword-button-state', n_clicks=0, children='Show Article',
-                    style={'background-color': '#44c767'}),
-        html.Div(id='keyword-list',
-                 style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
-        # html.Div(id='output-density-article',
-        #          style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
+                          html.Div([
+                              dash_table.DataTable(
+                                  id='datatable-temp',
+                                  # data=df_key.to_dict('records'),
+                                  # columns=[{'id': c, 'name': c} for c in df_key.columns],
+                                  page_size=10,
+                                  row_selectable="multi",
+                                  selected_rows=[],
+                                  style_cell={'textAlign': 'left', 'font-family': 'sans-serif'},
+                                  style_header={
+                                      'backgroundColor': 'rgb(230, 230, 230)',
+                                      'fontWeight': 'bold'
+                                  },
+                                  export_columns='all',
+                                  export_format='xlsx'
+                              )
 
-        html.Div(
-            html.Div([
-                html.Div([
-                    # html.Div(id='output-table')
-                    dash_table.DataTable(
-                        id='output-density-article',
-                        # data=df_sql_doi.to_dict('records'),
-                        # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
-                        page_size=10,
-                        style_cell={'textAlign': 'left', 'font-family': 'sans-serif', 'whiteSpace': 'normal',
-                                    'height': 'auto'},
-                        style_header={
-                            'backgroundColor': 'rgb(230, 230, 230)',
-                            'fontWeight': 'bold'
-                        },
-                        style_cell_conditional=[
-                            {'if': {'column_id': 'paper_doi'},
-                             'width': '20%'}
-                            # {'if': {'column_id': 'paper_doi'},
-                            #  'overflow': 'hidden',
-                            #  'textOverflow': 'ellipsis',
-                            #  'maxWidth': 0}
-                        ],
-                        row_selectable="multi",
-                        selected_rows=[]
-                    )
+                          ], style={'margin-top': '30px'}),
+                          html.Button(id='keyword-button-state', n_clicks=0, children='Show Article',
+                                      style={'background-color': '#44c767'}),
+                          html.Div(id='keyword-list',
+                                   style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
+                          # html.Div(id='output-density-article',
+                          #          style={'margin': 'auto', 'margin-top': '80px', 'border': '2px solid #73AD21'}),
 
-                ], className="eight columns",
-                    style={'border': '2px solid #73AD21'}),
+                          html.Div(
+                              html.Div([
+                                  html.Div([
+                                      # html.Div(id='output-table')
+                                      dash_table.DataTable(
+                                          id='output-density-article',
+                                          # data=df_sql_doi.to_dict('records'),
+                                          # columns=[{'id': c, 'name': c} for c in df_sql_doi.columns],
+                                          page_size=10,
+                                          style_cell={'textAlign': 'left', 'font-family': 'sans-serif',
+                                                      'whiteSpace': 'normal',
+                                                      'height': 'auto'},
+                                          style_header={
+                                              'backgroundColor': 'rgb(230, 230, 230)',
+                                              'fontWeight': 'bold'
+                                          },
+                                          style_cell_conditional=[
+                                              {'if': {'column_id': 'paper_doi'},
+                                               'width': '20%'}
+                                              # {'if': {'column_id': 'paper_doi'},
+                                              #  'overflow': 'hidden',
+                                              #  'textOverflow': 'ellipsis',
+                                              #  'maxWidth': 0}
+                                          ],
+                                          row_selectable="multi",
+                                          selected_rows=[]
+                                      )
 
-                html.Div([
-                    html.Div(id='f-output-name', style={'font-weight': 'bold'}),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(id='f-abstract-output-author', style={'font-style': 'italic'}),
-                    html.Hr(style={'margin': '2px'}),
+                                  ], className="eight columns",
+                                      style={'border': '2px solid #73AD21'}),
 
-                    html.Div(id='f-output-date'),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(id='f-abstract-output-country'),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(
-                        id='f-output-abstract'
-                        , style={'text-align': 'justify', 'text-justify': 'inter-word'}
-                    ),
-                    html.Hr(style={'margin': '2px'}),
-                    html.Div(
-                        id='f-output-doi'
-                        # , style={'border': '2px solid #b78846'}
-                    ),
-                    html.Hr(style={'margin': '2px'}),
-                    html.A(id='f-link-paper', children=[
-                        html.Button('Get Paper', id='f-get-paper', n_clicks=0, style={'background-color': '#44c767'}),
-                    ],
-                           # href='www.google.com',
-                           target="_blank",
-                           # download=''
-                           )
-                ]
-                    , className="four columns"),
-            ],
-                style={'margin-top': '30px'}),
-            className='row'),
+                                  html.Div([
+                                      html.Div(id='f-output-name', style={'font-weight': 'bold'}),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(id='f-abstract-output-author', style={'font-style': 'italic'}),
+                                      html.Hr(style={'margin': '2px'}),
 
-        html.Div([
-            html.Div(id='output-author',
-                     className='six columns',
-                     style={'width': '50%', 'float': 'left', 'border': '2px solid #73AD21'}),
+                                      html.Div(id='f-output-date'),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(id='f-abstract-output-country'),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(
+                                          id='f-output-abstract'
+                                          , style={'text-align': 'justify', 'text-justify': 'inter-word'}
+                                      ),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.Div(
+                                          id='f-output-doi'
+                                          # , style={'border': '2px solid #b78846'}
+                                      ),
+                                      html.Hr(style={'margin': '2px'}),
+                                      html.A(id='f-link-paper', children=[
+                                          html.Button('Get Paper', id='f-get-paper', n_clicks=0,
+                                                      style={'background-color': '#44c767'}),
+                                      ],
+                                             # href='www.google.com',
+                                             target="_blank",
+                                             # download=''
+                                             )
+                                  ]
+                                      , className="four columns"),
+                              ],
+                                  style={'margin-top': '30px'}),
+                              className='row'),
 
-            html.Div(id='output-country',
-                     className='six columns',
-                     style={'margin-left': '10%', 'border': '2px solid #73AD21'})
+                          html.Div([
+                              html.Div(id='output-author',
+                                       className='six columns',
+                                       style={'width': '50%', 'float': 'left', 'border': '2px solid #73AD21'}),
 
-        ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
+                              html.Div(id='output-country',
+                                       className='six columns',
+                                       style={'margin-left': '10%', 'border': '2px solid #73AD21'})
 
-        html.Div([
-            html.Button('Show Country Relation', id='output-country-relation', n_clicks=0
-                        , className='six columns'
-                        , style={'width': '50%', 'float': 'left'}
-                        ),
-            html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
-                        , className='six columns'
-                        , style={'margin-left': '10%'}
-                        ),
-            html.Button('Show Wordcloud', id='output-wordcloud-relation', n_clicks=0
-                        , className='six columns'
-                        , style={'margin-left': '10%'}
-                        )
+                          ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
 
-        ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
+                          html.Div([
+                              html.Button('Show Country Relation', id='output-country-relation', n_clicks=0
+                                          , className='six columns'
+                                          , style={'width': '50%', 'float': 'left'}
+                                          ),
+                              html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
+                                          , className='six columns'
+                                          , style={'margin-left': '10%'}
+                                          ),
+                              html.Button('Show Wordcloud', id='output-wordcloud-relation', n_clicks=0
+                                          , className='six columns'
+                                          , style={'margin-left': '10%'}
+                                          )
 
-        html.Div([
-            html.Img(id='output-relation-graph'
-                     )
-            # , html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
-            #             , className='six columns'
-            #             , style={'margin-left': '10%'}
-            #             )
+                          ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'}),
 
-        ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'})
+                          html.Div([
+                              html.Img(id='output-relation-graph'
+                                       )
+                              # , html.Button('Show Author Relation', id='output-author-relation', n_clicks=0
+                              #             , className='six columns'
+                              #             , style={'margin-left': '10%'}
+                              #             )
 
-    ])
+                          ], style={'width': '100%', 'display': 'flex', 'margin-top': '30px'})
+
+                      ])
 
 
 # @app.callback(Output('output-count', 'children'))
