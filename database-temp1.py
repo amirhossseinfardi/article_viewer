@@ -105,44 +105,57 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets, suppress_ca
 app.title = 'ثامن پایش'
 app.layout = html.Div(
     children=[
-        html.H4(children='Search in SamenPayesh database'),
-        dcc.Input(id='input-1-state', type='text', value='CFD'),
-        html.H5(children='Select Country', style={'margin-top': '30px'}),
+        html.H4(children='Search in SamenPayesh database', style={'text-align': 'center'}),
         html.Div([
-            dcc.Dropdown(
-                id='country_dropdown_menu',
-                options=country_dropdown_list,
-                value=[],
-                multi=True
-            )
-        ]),
-        html.H5(children='Select Journal', style={'margin-top': '30px'}),
-        html.Div([
-            dcc.Dropdown(
-                id='journal_dropdown_menu',
-                options=all_journal_list,
-                value=[],
-                multi=True
-            )
-        ]),
+            dcc.Input(id='input-1-state', type='text', value='CFD', style={'text-align': 'center'})
+        ], style={'text-align': 'center'}),
 
-        html.H5(children='Select search place', style={'margin-top': '30px'}),
         html.Div([
-            dcc.Dropdown(
-                id='search_place_dropdown_menu',
-                options=[
-                    {'label': 'Search in Title', 'value': 'title'},
-                    {'label': 'Search in Abstract', 'value': 'abstract'}
-                ],
-                value='abstract',
-                multi=False
-            )
-        ]),
+            html.Div([
+                html.H5(children='Select Country', style={'margin-top': '5px'}),
+                html.Div([
+                    dcc.Dropdown(
+                        id='country_dropdown_menu',
+                        options=country_dropdown_list,
+                        value=[],
+                        multi=True
+                    )
+                ])
+            ], style={'float': 'left', 'text-align': 'center', 'width': '400px',
+                      'margin-top': '5px',
+                      'margin-left': '5%'}),
+            html.Div([
+                html.H5(children='Select Journal', style={'margin-top': '5px'}),
+                html.Div([
+                    dcc.Dropdown(
+                        id='journal_dropdown_menu',
+                        options=all_journal_list,
+                        value=[],
+                        multi=True
+                    )
+                ])
+            ], style={'margin-left': '30%',
+                      'margin-top': '5px',
+                      'width': '400px',
+                      'text-align': 'center'})
+        ], style={'display': 'flex', 'align-items': 'center'}),
 
-        html.Button(id='submit-button-state', n_clicks=0, children='Search',
-                    style={'background-color': '#44c767'}),
-        html.H5(children=couting_output),
-        html.H5(children='Paper Dates', style={'margin-top': '30px'}),
+        html.Div([
+            html.H5(children='Select search place', style={'margin-top': '10px', 'text-align': 'center'}),
+            html.Div([
+                dcc.Dropdown(
+                    id='search_place_dropdown_menu',
+                    options=[
+                        {'label': 'Search in Title', 'value': 'title'},
+                        {'label': 'Search in Abstract', 'value': 'abstract'}
+                    ],
+                    value='abstract',
+                    multi=False
+                )
+            ], style={'text-align': 'center'})
+        ], style={'width': '30%',
+                  'margin': 'auto'}),
+        html.H5(children='Paper Dates', style={'margin-top': '10px', 'text-align': 'center'}),
         html.Div([
             dcc.RangeSlider(
                 id='year-slider',
@@ -155,6 +168,14 @@ app.layout = html.Div(
             ),
             html.Div(id='output-container-range-slider')
         ]),
+        html.Div([
+            html.Button(id='submit-button-state', n_clicks=0, children='Search',
+                        style={'background-color': '#44c767'})
+        ], style={'text-align': 'center'}),
+
+        html.Hr(style={'margin': '2px'}),
+        html.H5(children=couting_output),
+
         html.H5(id='result_count', style={'margin-top': '20px'}),
         html.Div(
             html.Div([
