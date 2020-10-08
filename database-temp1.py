@@ -183,6 +183,10 @@ app.layout = html.Div(
             dcc.Graph(id='chart-test', style={'text-align': 'center'})
         ], style={'text-align': 'center', 'width': '50%', 'margin': 'auto'}),
 
+        html.Div([
+            html.Button(id='download-chart', n_clicks=0, children='download chart data',
+                        style={'background-color': '#44c767'})
+        ], style={'text-align': 'center', 'margin-top': '10px'}),
         html.Hr(style={'margin': '2px'}),
         html.H5(children=couting_output),
 
@@ -1366,21 +1370,28 @@ def showRelation(n_click, n1_click, n2_click, user_year, input1):
 
 @app.callback(
     Output('chart-test', 'figure'),
-    [Input('draw-chart', 'n_clicks')],
+    [Input('draw-chart', 'n_clicks'),
+     Input('download-chart', 'n_clicks')],
     [State('year-slider', 'value'),
      State('input-1-state', 'value'),
      State('country_dropdown_menu', 'value'),
      State('journal_dropdown_menu', 'value')
      ]
 )
-def showCountryRelation(n_click, user_year, input1,
+def showCountryRelation(n_click, n1_click, user_year, input1,
                         selected_country_dropdown,
                         selected_journal_dropdown
                         ):
     # create some matplotlib graph
-    fig = draw_keyword_data(input1, user_year,
-                            selected_country_dropdown,
-                            selected_journal_dropdown)
+    fig, chart_df = draw_keyword_data(input1, user_year,
+                                      selected_country_dropdown,
+                                      selected_journal_dropdown)
+    user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
+    callback_states = dash.callback_context.states.values()
+    callback_inputs = dash.callback_context.inputs.values()
+    if user_click == 'download-chart':
+        chart_df.to_excel(r'export\{}-data.xlsx'.format(input1))
+
     return fig
 
 

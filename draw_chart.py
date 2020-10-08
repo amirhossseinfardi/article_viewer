@@ -17,8 +17,8 @@ def draw_keyword_data(user_search,
 
     # select year
     year_list = list(range(user_year[0], user_year[1] + 1, 1))
-    if len(year_list) == 1:
-        year_list.append(year_list[0])
+    # if len(year_list) == 1:
+    #     year_list.append(year_list[0])
 
     # ------------------  select journal
     if not user_journal or user_journal[0] == '*':
@@ -90,4 +90,4 @@ def draw_keyword_data(user_search,
     chart_df['counter'] = counter_list
     fig = px.bar(chart_df, x="year", y="counter",
                  title='keyword : {}'.format(user_search))
-    return fig
+    return fig, chart_df
