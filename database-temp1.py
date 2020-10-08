@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 from analysis_country import createGraph
 from analysis_author import createGraphAuthor
 from analysis_keyword import createWordcloud
+from draw_chart import draw_keyword_data
 
 conn = sqlite3.connect('temp.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -172,6 +173,15 @@ app.layout = html.Div(
             html.Button(id='submit-button-state', n_clicks=0, children='Search',
                         style={'background-color': '#44c767'})
         ], style={'text-align': 'center'}),
+
+        html.Hr(style={'margin': '2px'}),
+        html.Div([
+            html.Button(id='draw-chart', n_clicks=0, children='draw chart',
+                        style={'background-color': '#44c767'})
+        ], style={'text-align': 'center', 'margin-top': '10px'}),
+        html.Div([
+            dcc.Graph(id='chart-test', style={'text-align': 'center'})
+        ], style={'text-align': 'center', 'width': '50%', 'margin': 'auto'}),
 
         html.Hr(style={'margin': '2px'}),
         html.H5(children=couting_output),
@@ -1352,6 +1362,26 @@ def showRelation(n_click, n1_click, n2_click, user_year, input1):
         return "data:image/png;base64,{}".format(data)
     else:
         return 'no'
+
+
+@app.callback(
+    Output('chart-test', 'figure'),
+    [Input('draw-chart', 'n_clicks')],
+    [State('year-slider', 'value'),
+     State('input-1-state', 'value'),
+     State('country_dropdown_menu', 'value'),
+     State('journal_dropdown_menu', 'value')
+     ]
+)
+def showCountryRelation(n_click, user_year, input1,
+                        selected_country_dropdown,
+                        selected_journal_dropdown
+                        ):
+    # create some matplotlib graph
+    fig = draw_keyword_data(input1, user_year,
+                            selected_country_dropdown,
+                            selected_journal_dropdown)
+    return fig
 
 
 # @app.callback(
