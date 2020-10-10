@@ -19,6 +19,8 @@ from analysis_country import createGraph
 from analysis_author import createGraphAuthor
 from analysis_keyword import createWordcloud
 from draw_chart import draw_keyword_data
+from multi_search import parse_user_input
+from multi_search import sql_multi_search
 
 conn = sqlite3.connect('temp.db', check_same_thread=False)
 cursor = conn.cursor()
@@ -422,11 +424,14 @@ app.layout = html.Div(
                State('journal_dropdown_menu', 'value'),
                State('search_place_dropdown_menu', 'value')]
               )
-def generate_table(n_clicks, input1, user_year,
+def generate_table(n_clicks, input_text, user_year,
                    selected_country_dropdown,
                    selected_journal_dropdown,
                    selected_search_place,
                    max_rows=10):
+    # parse user search
+    input1 = parse_user_input(input_text)
+
     # ------------------  select journal
     if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
         selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
@@ -487,7 +492,7 @@ def generate_table(n_clicks, input1, user_year,
         jn = row
         print(jn)
 
-        # prepare sqlite
+        # prepare sqlite for country
         if not selected_country_dropdown or selected_country_dropdown[0] == '*':
             selected_country_dropdown_list = '*'
             sql_selected_country_dropdown = ''
@@ -516,7 +521,9 @@ def generate_table(n_clicks, input1, user_year,
             ))
             '''.format(temp_country=str(tuple(selected_country_dropdown_list)),
                        temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
-            # sql_selected_country_dropdown = str(tuple(selected_country_dropdown_list))
+
+        # prepare sql for multi search
+        final_sql_multi_search = sql_multi_search(input_text, sql_search_place, jn)
 
         # select id of each keyword based on different journal name
         sql_final = """
@@ -534,12 +541,14 @@ def generate_table(n_clicks, input1, user_year,
          WHERE year IN {temp_year}
          ))
          {temp_country}
+         {temp_multi_search}
          ;""".format(temp_paper_search=sql_search_place,
                      temp_jn='paper_keyword_' + jn.replace(" ", "_"),
                      temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                      user_search_temp=input1,
                      temp_year=str(tuple(year_list)),
-                     temp_country=sql_selected_country_dropdown)
+                     temp_country=sql_selected_country_dropdown,
+                     temp_multi_search=final_sql_multi_search)
 
         df2 = pd.read_sql_query(sql_final, conn)
         # get keyword name of each id. loop for select duplicate keyword
@@ -568,12 +577,14 @@ def generate_table(n_clicks, input1, user_year,
          WHERE year IN {temp_year}
          ))
          {temp_country}
+         {temp_multi_search}
         ;""".format(
             temp_paper_search=sql_search_place,
             temp_paper_list='paper_list_' + jn.replace(" ", "_"),
             user_search_temp=input1,
             temp_year=str(tuple(year_list)),
-            temp_country=sql_selected_country_dropdown
+            temp_country=sql_selected_country_dropdown,
+            temp_multi_search=final_sql_multi_search
         )
         df_full_sql_doi = df_full_sql_doi.append(pd.read_sql_query(sql_doi, conn))
 
@@ -593,12 +604,14 @@ def generate_table(n_clicks, input1, user_year,
                  WHERE year IN {temp_year}
                  ))
                  {temp_country}
+                 {temp_multi_search}
                  ;""".format(temp_paper_search=sql_search_place,
                              temp_jn='paper_country_' + jn.replace(" ", "_"),
                              temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                              user_search_temp=input1,
                              temp_year=str(tuple(year_list)),
-                             temp_country=sql_selected_country_dropdown)
+                             temp_country=sql_selected_country_dropdown,
+                             temp_multi_search=final_sql_multi_search)
         print(sql_country)
         df4 = pd.read_sql_query(sql_country, conn)
         for nnn in df4['country_id']:
@@ -728,7 +741,11 @@ def generate_table(n_clicks, input1, user_year,
                # State('output-density-article', 'selected_row_ids'),
                State('input-1-state', 'value'),
                State('journal_dropdown_menu', 'value')])
-def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_journal_dropdown):
+def generate_table(xxx, n_clicks, selected_row_ids, user_year,
+                   input_text, selected_journal_dropdown):
+    # parse user search
+    input1 = parse_user_input(input_text)
+
     # ------------------  select journal
     if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
         selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
@@ -762,6 +779,10 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
 
         for row in selected_journal:
             jn = row
+
+            # prepare sql for multi search
+            final_sql_multi_search = sql_multi_search(input_text, 'paper_abstract', jn)
+
             # select id of each paper based on different journal name
             sql_final = """
             SELECT paper_doi, paper_name, paper_abstract
@@ -784,11 +805,13 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
              FROM year_list
              WHERE year IN {temp_year}
              ))
+             {temp_multi_search}
                  ;""".format(temp_jn='paper_keyword_' + jn.replace(" ", "_"),
                              temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                              user_search_temp=input1,
                              temp_year=str(tuple(year_list)),
-                             selected_search_temp=selected_search)
+                             selected_search_temp=selected_search,
+                             temp_multi_search=final_sql_multi_search)
             df_sql_article = df_sql_article.append(pd.read_sql_query(sql_final, conn))
 
             # get list of keyword i searched
@@ -804,6 +827,7 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
                             FROM {temp_paper_list}
                             WHERE paper_abstract LIKE '%{user_search_temp}%'
                                            )
+                        {temp_multi_search}
                                     )
                     AND
                     keyword_id IN (
@@ -815,7 +839,8 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
                 selected_search_temp=selected_search,
                 temp_paper_keyword='paper_keyword_' + jn.replace(" ", "_"),
                 user_search_temp=input1,
-                temp_paper_list='paper_list_' + jn.replace(" ", "_")
+                temp_paper_list='paper_list_' + jn.replace(" ", "_"),
+                temp_multi_search=final_sql_multi_search
             )
             kljfkl = '''
                             AND
@@ -865,8 +890,13 @@ def generate_table(xxx, n_clicks, selected_row_ids, user_year, input1, selected_
                State('input-1-state', 'value'),
                State('country_dropdown_menu', 'value'),
                State('journal_dropdown_menu', 'value')])
-def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, selected_country_dropdown,
+def generate_table_author(xxx, n_clicks, selected_row_ids, user_year,
+                          input_text,
+                          selected_country_dropdown,
                           selected_journal_dropdown):
+    # parse user search
+    input1 = parse_user_input(input_text)
+
     # ------------------  select journal
     if not selected_journal_dropdown or selected_journal_dropdown[0] == '*':
         selected_journal = [x['value'] for x in all_journal_list if x['value'] not in ['*']]
@@ -892,6 +922,9 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
         # get journal name available in database
         for row in selected_journal:
             jn = row
+
+            # prepare sql for multi search
+            final_sql_multi_search = sql_multi_search(input_text, 'paper_abstract', jn)
 
             # prepare sqlite
             if not selected_country_dropdown or selected_country_dropdown[0] == '*':
@@ -940,11 +973,13 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
                      WHERE year IN {temp_year}
                      ))
                      {temp_country}
+                     {temp_multi_search}
                      ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
                                  temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                                  user_search_temp=input1,
                                  temp_year=str(tuple(year_list)),
-                                 temp_country=sql_selected_country_dropdown)
+                                 temp_country=sql_selected_country_dropdown,
+                                 temp_multi_search=final_sql_multi_search)
             df3 = pd.read_sql_query(sql_author, conn)
             # loop through author ID cause i need duplicated one
             for mmm in df3['author_id']:
@@ -985,6 +1020,9 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
         # get author
         for row in selected_journal:
             jn = row
+
+            # prepare sql for multi search
+            final_sql_multi_search = sql_multi_search(input_text, 'paper_abstract', jn)
 
             # prepare sqlite
             if not selected_country_dropdown or selected_country_dropdown[0] == '*':
@@ -1039,13 +1077,15 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year, input1, se
                      WHERE year IN {temp_year}
                      ))
                      {temp_country}
+                     {temp_multi_search}
                      ;""".format(temp_jn='paper_author_' + jn.replace(" ", "_"),
                                  temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                                  user_search_temp=input1,
                                  temp_year=str(tuple(year_list)),
                                  temp_key_jn='paper_keyword_' + jn.replace(" ", "_"),
                                  selected_search_temp=selected_search,
-                                 temp_country=sql_selected_country_dropdown)
+                                 temp_country=sql_selected_country_dropdown,
+                                 temp_multi_search=final_sql_multi_search)
             df3 = pd.read_sql_query(sql_author, conn)
 
             # loop through author ID cause we need all author
@@ -1335,7 +1375,11 @@ def showAbstract1(xxx, selected_row_ids, selected_journal_dropdown):
     [State('year-slider', 'value'),
      State('input-1-state', 'value')]
 )
-def showRelation(n_click, n1_click, n2_click, user_year, input1):
+def showRelation(n_click, n1_click, n2_click,
+                 user_year, input_text):
+    # parse user search
+    input1 = parse_user_input(input_text)
+
     user_click = dash.callback_context.triggered[0]['prop_id'].split('.')[0]
     callback_states = dash.callback_context.states.values()
     callback_inputs = dash.callback_context.inputs.values()
@@ -1378,7 +1422,7 @@ def showRelation(n_click, n1_click, n2_click, user_year, input1):
      State('journal_dropdown_menu', 'value')
      ]
 )
-def showCountryRelation(n_click, n1_click, user_year, input1,
+def draw_bar_chart(n_click, n1_click, user_year, input1,
                         selected_country_dropdown,
                         selected_journal_dropdown
                         ):

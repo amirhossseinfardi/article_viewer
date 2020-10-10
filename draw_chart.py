@@ -1,12 +1,17 @@
 import pandas as pd
 import sqlite3
 import plotly.express as px
+from multi_search import parse_user_input
+from multi_search import sql_multi_search
 
 
-def draw_keyword_data(user_search,
+def draw_keyword_data(input_text,
                       user_year,
                       user_country,
                       user_journal):
+    # parse user input
+    user_search = parse_user_input(input_text)
+
     conn = sqlite3.connect('temp.db')
     cursor = conn.cursor()
     sql_jn = """
@@ -64,6 +69,9 @@ def draw_keyword_data(user_search,
                             '''.format(temp_country=str(tuple(selected_country_dropdown_list)),
                                        temp_paper_country_list='paper_country_' + jn.replace(" ", "_"))
 
+            # prepare sql for multi search
+            final_sql_multi_search = sql_multi_search(input_text, 'paper_abstract', jn)
+
             sql_final = """
                          SELECT paper_id
                          FROM {temp_paper_list}
@@ -77,11 +85,13 @@ def draw_keyword_data(user_search,
                          WHERE year = {temp_year}
                          ))
                          {temp_country}
+                         {temp_multi_search}
                          ;""".format(temp_jn='paper_keyword_' + jn.replace(" ", "_"),
                                      temp_paper_list='paper_list_' + jn.replace(" ", "_"),
                                      user_search_temp=user_search,
                                      temp_year=str(my_year),
-                                     temp_country=sql_selected_country_dropdown)
+                                     temp_country=sql_selected_country_dropdown,
+                                     temp_multi_search=final_sql_multi_search)
 
             df2 = pd.read_sql_query(sql_final, conn)
             counter = counter + len(df2.index)
