@@ -167,14 +167,17 @@ app.layout = html.Div(
                 step=1,
                 value=[2017, 2020],
                 allowCross=False,
-                marks={str(year): str(year) for year in df_years['year'].unique()}
+                # marks={str(year): str(year) for year in df_years['year'].unique()},
+                marks={str(year): {'label': str(year),
+                                   'style': {'writing-mode': 'vertical-rl', 'text-orientation': 'mixed'}} for year in
+                       df_years['year'].unique()}
             ),
             html.Div(id='output-container-range-slider')
         ]),
         html.Div([
             html.Button(id='submit-button-state', n_clicks=0, children='Search',
                         style={'background-color': '#44c767'})
-        ], style={'text-align': 'center'}),
+        ], style={'text-align': 'center', 'margin-top': '10px'}),
 
         html.Hr(style={'margin': '2px'}),
         html.Div([
@@ -1423,9 +1426,9 @@ def showRelation(n_click, n1_click, n2_click,
      ]
 )
 def draw_bar_chart(n_click, n1_click, user_year, input1,
-                        selected_country_dropdown,
-                        selected_journal_dropdown
-                        ):
+                   selected_country_dropdown,
+                   selected_journal_dropdown
+                   ):
     # create some matplotlib graph
     fig, chart_df = draw_keyword_data(input1, user_year,
                                       selected_country_dropdown,
