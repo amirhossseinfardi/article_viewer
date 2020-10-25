@@ -313,7 +313,9 @@ app.layout = html.Div(
                             #  'maxWidth': 0}
                         ],
                         row_selectable="multi",
-                        selected_rows=[]
+                        selected_rows=[],
+                        export_columns='all',
+                        export_format='xlsx'
                     )
 
                 ], className="eight columns",
@@ -727,7 +729,9 @@ def generate_table(n_clicks, input_text, user_year,
         style_header={
             'backgroundColor': 'rgb(230, 230, 230)',
             'fontWeight': 'bold'
-        }
+        },
+        export_columns='all',
+        export_format='xlsx'
     )
 
     return output1_data, output1_column, [], output2_data, output2_column, output4, output5
@@ -1007,7 +1011,9 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year,
             style_header={
                 'backgroundColor': 'rgb(230, 230, 230)',
                 'fontWeight': 'bold'
-            }
+            },
+            export_columns='all',
+            export_format='xlsx'
         )
 
     else:
@@ -1114,7 +1120,9 @@ def generate_table_author(xxx, n_clicks, selected_row_ids, user_year,
             style_header={
                 'backgroundColor': 'rgb(230, 230, 230)',
                 'fontWeight': 'bold'
-            }
+            },
+            export_columns='all',
+            export_format='xlsx'
         )
 
     return output

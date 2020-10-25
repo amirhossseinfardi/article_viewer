@@ -99,5 +99,5 @@ def draw_keyword_data(input_text,
     chart_df = pd.DataFrame(year_list, columns=['year'])
     chart_df['counter'] = counter_list
     fig = px.bar(chart_df, x="year", y="counter",
-                 title='keyword : {}'.format(user_search))
+                 title='keyword : {}'.format(input_text))
     return fig, chart_df
